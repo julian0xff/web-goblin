@@ -348,7 +348,7 @@ function ResultHeader({
           onClick={() => setCardPreviewUrl(null)}
         >
           <div
-            className="relative mx-4 flex max-w-3xl flex-col items-center gap-4"
+            className="relative mx-4 flex max-w-5xl flex-col items-center gap-4"
             onClick={(e) => e.stopPropagation()}
           >
             <img

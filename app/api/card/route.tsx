@@ -265,7 +265,7 @@ export async function GET(request: NextRequest) {
                     style={{
                       display: "flex",
                       gap: "32px",
-                      alignItems: "baseline",
+                      alignItems: "center",
                     }}
                   >
                     <div
@@ -491,7 +491,7 @@ export async function GET(request: NextRequest) {
                   flexDirection: "column",
                   borderLeft: `1px solid ${frameBorder}`,
                   paddingLeft: "36px",
-                  paddingRight: "12px",
+                  paddingRight: "36px",
                 }}
               >
                 <div
