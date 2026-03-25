@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const fontDisplay = params.get("fontDisplay") ?? "Display";
   const fontBody = params.get("fontBody") ?? "Body";
   const layout = params.get("layout") ?? "";
-  const spacing = params.get("spacing") ?? "";
+
   const buttons = params.get("buttons") ?? "";
   const header = params.get("header") ?? "";
   const bg = params.get("bg") || "#ece7df";
@@ -32,19 +32,15 @@ export async function GET(request: NextRequest) {
   const specimenTint = withAlpha(ink, 0.035);
   const swatches = palette.slice(0, 5);
 
-  const truncatedSummary =
-    summary.length > 120 ? `${summary.slice(0, 117)}...` : summary;
   const truncatedTitle =
     title.length > 52 ? `${title.slice(0, 49)}...` : title;
   const primaryTags = tags.slice(0, 4);
-  const detailBlocks = [
-    { label: "Display", value: fontDisplay },
-    { label: "Body", value: fontBody },
-    { label: "Layout", value: layout },
-    { label: "Spacing", value: spacing },
-    ...(buttons ? [{ label: "Buttons", value: buttons }] : []),
-    ...(header ? [{ label: "Nav", value: header }] : []),
-  ].slice(0, 6);
+  const colorBlocks = [
+    { label: "Background", value: bg },
+    { label: "Text", value: fg },
+    { label: "Accent", value: accent },
+    { label: "Palette", value: `${palette.length} colors` },
+  ];
 
   return new ImageResponse(
     (
@@ -203,11 +199,9 @@ export async function GET(request: NextRequest) {
                     color: muted,
                     maxWidth: "680px",
                     marginBottom: "16px",
-                    maxHeight: "46px",
-                    overflow: "hidden",
                   }}
                 >
-                  {truncatedSummary}
+                  {summary}
                 </div>
 
                 {primaryTags.length > 0 ? (
@@ -318,11 +312,11 @@ export async function GET(request: NextRequest) {
                       flex: 1,
                     }}
                   >
-                    {detailBlocks.map((detail) => (
+                    {colorBlocks.map((block) => (
                       <MetricBlock
-                        key={`${detail.label}-${detail.value}`}
-                        label={detail.label}
-                        value={detail.value}
+                        key={block.label}
+                        label={block.label}
+                        value={block.value}
                         border={subtleBorder}
                         labelColor={faint}
                         valueColor={ink}
