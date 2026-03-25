@@ -491,6 +491,7 @@ export async function GET(request: NextRequest) {
                   flexDirection: "column",
                   borderLeft: `1px solid ${frameBorder}`,
                   paddingLeft: "36px",
+                  paddingRight: "12px",
                 }}
               >
                 <div
