@@ -13,6 +13,7 @@ import {
   TextTIcon as TextT,
   XLogoIcon as XLogo,
 } from "@phosphor-icons/react";
+import type { ComponentStyle, StyleRole } from "@/lib/analysis-types";
 import type { WebsiteAnalysis } from "@/lib/site-analysis";
 
 // ─── Main Results View ─────────────────────────────────────────
@@ -40,6 +41,90 @@ export function ResultsView({
       <PromptSection analysis={analysis} onCopy={onCopyPrompt} />
     </div>
   );
+}
+
+const TEXT_ROLE_CONFIG: Array<{
+  role: StyleRole;
+  label: string;
+  sample: string;
+  fallbackColor: string;
+}> = [
+  { role: "h1", label: "H1", sample: "Page headline", fallbackColor: "var(--foreground)" },
+  { role: "h2", label: "H2", sample: "Section heading", fallbackColor: "var(--foreground)" },
+  { role: "h3", label: "H3", sample: "Subsection heading", fallbackColor: "var(--foreground)" },
+  { role: "body", label: "p", sample: "Body text rendered in the extracted font, showing line height and readability.", fallbackColor: "var(--muted)" },
+  { role: "link", label: "a", sample: "Inline link style", fallbackColor: "var(--accent)" },
+  { role: "navLink", label: "nav", sample: "Navigation link", fallbackColor: "var(--muted)" },
+];
+
+const BUTTON_ROLE_CONFIG: Array<{
+  role: StyleRole;
+  label: string;
+  sample: string;
+}> = [
+  { role: "buttonPrimary", label: "Primary", sample: "Primary action" },
+  { role: "buttonSecondary", label: "Secondary", sample: "Secondary action" },
+];
+
+function getRoleVariants(
+  analysis: WebsiteAnalysis,
+  role: StyleRole,
+  limit = 2
+): ComponentStyle[] {
+  const variants = analysis.componentStyleVariants?.[role];
+  if (variants && variants.length > 0) {
+    return variants.slice(0, limit);
+  }
+
+  const single = analysis.componentStyles?.[role];
+  return single ? [single] : [];
+}
+
+function formatPreviewLabel(label: string, index: number): string {
+  return index === 0 ? label : `${label} v${index + 1}`;
+}
+
+function formatPxValue(value: number | null | undefined, fallback: string): string {
+  if (value == null) return fallback;
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}px` : `${rounded.toFixed(1)}px`;
+}
+
+function resolveTextColor(
+  style: ComponentStyle | undefined,
+  fallback: string
+): string {
+  if (!style?.color || style.color === "LinkText") return fallback;
+  return style.color;
+}
+
+function resolveBackgroundColor(
+  style: ComponentStyle | undefined,
+  fallback: string
+): string {
+  if (!style?.backgroundColor || style.backgroundColor === "transparent" || style.backgroundColor === "none") {
+    return fallback;
+  }
+  return style.backgroundColor;
+}
+
+function resolveBorderRadius(
+  style: ComponentStyle | undefined,
+  fallback: string
+): string {
+  return style?.borderRadiusPx != null
+    ? `${Math.round(style.borderRadiusPx)}px`
+    : fallback;
+}
+
+function resolveBorder(
+  style: ComponentStyle | undefined,
+  fallbackColor: string
+): string {
+  if (style?.borderWidthPx != null && style.borderWidthPx > 0) {
+    return `${Math.max(1, Math.round(style.borderWidthPx))}px solid ${resolveTextColor(style, fallbackColor)}`;
+  }
+  return `1px solid ${fallbackColor}`;
 }
 
 // ─── Result Header ─────────────────────────────────────────────
@@ -243,23 +328,13 @@ function PaletteSection({ analysis }: { analysis: WebsiteAnalysis }) {
 
 function TypographySection({ analysis }: { analysis: WebsiteAnalysis }) {
   const cs = analysis.componentStyles;
-
-  const h1Size = cs?.h1?.fontSizePx
-    ? `${Math.round(cs.h1.fontSizePx)}px`
-    : null;
-  const h2Size = cs?.h2?.fontSizePx
-    ? `${Math.round(cs.h2.fontSizePx)}px`
-    : null;
-  const h3Size = cs?.h3?.fontSizePx
-    ? `${Math.round(cs.h3.fontSizePx)}px`
-    : null;
-  const h1Weight = cs?.h1?.fontWeight ?? 700;
-  const h2Weight = cs?.h2?.fontWeight ?? 600;
-  const h3Weight = cs?.h3?.fontWeight ?? 600;
-  const bodySize = cs?.body?.fontSizePx
-    ? `${Math.round(cs.body.fontSizePx)}px`
-    : null;
-  const bodyLh = cs?.body?.lineHeightRatio ?? 1.75;
+  const renderedRoles = TEXT_ROLE_CONFIG.flatMap((config) =>
+    getRoleVariants(analysis, config.role).map((style, index) => ({
+      ...config,
+      style,
+      index,
+    }))
+  );
 
   return (
     <InspectorCard
@@ -271,86 +346,53 @@ function TypographySection({ analysis }: { analysis: WebsiteAnalysis }) {
           : "Font stacks and sizing"
       }
     >
-      {/* Live preview */}
       <div className="mb-5 space-y-3 border-b border-[var(--line)] pb-5">
-        <div className="flex items-baseline gap-3">
-          <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">
-            H1
-          </span>
-          <span
-            className="tracking-tighter text-[var(--foreground)]"
-            style={{
-              fontFamily: "var(--font-display, inherit)",
-              fontSize: h1Size ?? "clamp(1.5rem, 3.5vw, 2.25rem)",
-              fontWeight: h1Weight,
+        {renderedRoles.length > 0 ? (
+          renderedRoles.map(({ role, label, sample, fallbackColor, style, index }) => {
+            const commonStyle = {
+              fontFamily: style.fontStack || "var(--font-body, inherit)",
+              fontSize: formatPxValue(style.fontSizePx, role === "body" ? "1rem" : "1.125rem"),
+              fontWeight: style.fontWeight ?? undefined,
+              lineHeight: style.lineHeightRatio ?? undefined,
               letterSpacing:
-                cs?.h1?.letterSpacingPx != null
-                  ? `${cs.h1.letterSpacingPx}px`
+                style.letterSpacingPx != null ? `${style.letterSpacingPx}px` : undefined,
+              textTransform: style.textTransform ?? undefined,
+              textDecoration:
+                style.textDecoration && style.textDecoration !== "none"
+                  ? style.textDecoration
                   : undefined,
-            }}
-          >
-            Page headline
-          </span>
-        </div>
-        <div className="flex items-baseline gap-3">
-          <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">
-            H2
-          </span>
-          <span
-            className="tracking-tight text-[var(--foreground)]"
-            style={{
-              fontFamily: "var(--font-display, inherit)",
-              fontSize: h2Size ?? "clamp(1.25rem, 2.5vw, 1.75rem)",
-              fontWeight: h2Weight,
-            }}
-          >
-            Section heading
-          </span>
-        </div>
-        <div className="flex items-baseline gap-3">
-          <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">
-            H3
-          </span>
-          <span
-            className="tracking-tight text-[var(--foreground)]"
-            style={{
-              fontFamily: "var(--font-display, inherit)",
-              fontSize: h3Size ?? "1.125rem",
-              fontWeight: h3Weight,
-            }}
-          >
-            Subsection heading
-          </span>
-        </div>
-        <div className="flex items-start gap-3">
-          <span className="mt-1 shrink-0 font-mono text-[10px] text-[var(--muted)]">
-            p
-          </span>
-          <p
-            className="text-[var(--muted)]"
-            style={{
-              fontFamily: "var(--font-body, inherit)",
-              fontSize: bodySize ?? "1rem",
-              lineHeight: bodyLh,
-            }}
-          >
-            Body text rendered in the extracted font, showing line height and
-            readability.
+              color: resolveTextColor(style, fallbackColor),
+            };
+
+            return (
+              <div
+                key={`${role}-${index}`}
+                className={`flex gap-3 ${role === "body" ? "items-start" : "items-baseline"}`}
+              >
+                <span className="mt-1 shrink-0 font-mono text-[10px] text-[var(--muted)]">
+                  {formatPreviewLabel(label, index)}
+                </span>
+                {role === "body" ? (
+                  <p style={commonStyle}>{sample}</p>
+                ) : role === "link" || role === "navLink" ? (
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    style={commonStyle}
+                  >
+                    {sample}
+                  </a>
+                ) : (
+                  <span style={commonStyle}>{sample}</span>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-sm text-[var(--muted)]">
+            No role-level typography could be resolved for this page.
           </p>
-        </div>
-        <div className="flex items-baseline gap-3">
-          <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">
-            a
-          </span>
-          <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
-            className="text-[var(--accent)] underline underline-offset-4"
-            style={{ fontFamily: "var(--font-body, inherit)" }}
-          >
-            Inline link style
-          </a>
-        </div>
+        )}
       </div>
 
       {/* Spec data */}
@@ -379,32 +421,17 @@ function TypographySection({ analysis }: { analysis: WebsiteAnalysis }) {
 
 function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
   const cs = analysis.componentStyles;
-  const accentHex =
-    analysis.palette.find((s) => s.role === "accent")?.hex ?? "var(--accent)";
-
-  const btnHeight = cs?.buttonPrimary?.heightPx
-    ? `${Math.round(cs.buttonPrimary.heightPx)}px`
-    : analysis.buttons.height !== "Around 40px"
-      ? analysis.buttons.height
-      : "2.75rem";
-  const btnRadius =
-    cs?.buttonPrimary?.borderRadiusPx != null
-      ? `${Math.round(cs.buttonPrimary.borderRadiusPx)}px`
-      : "var(--button-radius, 0.95rem)";
-  const btnPx = cs?.buttonPrimary?.paddingXpx
-    ? `${Math.round(cs.buttonPrimary.paddingXpx)}px`
-    : "1.25rem";
-  const cardRadius =
-    cs?.cardTitle?.borderRadiusPx != null
-      ? `${Math.round(cs.cardTitle.borderRadiusPx)}px`
-      : "var(--border-radius, 1.25rem)";
-  const inputRadius =
-    cs?.input?.borderRadiusPx != null
-      ? `${Math.round(cs.input.borderRadiusPx)}px`
-      : "var(--button-radius, 1rem)";
-  const inputHeight = cs?.input?.heightPx
-    ? `${Math.round(cs.input.heightPx)}px`
-    : "3rem";
+  const buttonPreviews = BUTTON_ROLE_CONFIG.flatMap((config) =>
+    getRoleVariants(analysis, config.role).map((style, index) => ({
+      ...config,
+      style,
+      index,
+    }))
+  );
+  const inputPreviews = getRoleVariants(analysis, "input");
+  const cardTitlePreviews = getRoleVariants(analysis, "cardTitle");
+  const cardBodyPreviews = getRoleVariants(analysis, "cardBody");
+  const cardPreviewCount = Math.max(cardTitlePreviews.length, cardBodyPreviews.length);
 
   return (
     <InspectorCard
@@ -412,86 +439,137 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
       icon={<Sparkle size={16} weight="duotone" />}
       hint="Buttons, cards, inputs"
     >
-      {/* Button preview */}
       <div className="mb-5 space-y-4 border-b border-[var(--line)] pb-5">
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            className="inline-flex items-center justify-center text-sm font-medium text-[var(--paper)] transition-all duration-300"
-            style={{
-              backgroundColor: accentHex,
-              borderRadius: btnRadius,
-              height: btnHeight,
-              paddingLeft: btnPx,
-              paddingRight: btnPx,
-            }}
-          >
-            Primary
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center border border-[var(--line)] text-sm font-medium text-[var(--foreground)] transition-all duration-300"
-            style={{
-              borderRadius: btnRadius,
-              height: btnHeight,
-              paddingLeft: btnPx,
-              paddingRight: btnPx,
-            }}
-          >
-            Secondary
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline transition-all duration-300"
-            style={{
-              height: btnHeight,
-              paddingLeft: btnPx,
-              paddingRight: btnPx,
-            }}
-          >
-            Ghost
-          </button>
-        </div>
+        {buttonPreviews.length > 0 ? (
+          <div className="flex flex-wrap gap-3">
+            {buttonPreviews.map(({ label, sample, style, index, role }) => (
+              <button
+                key={`${role}-${index}`}
+                type="button"
+                className="inline-flex items-center justify-center transition-all duration-300"
+                style={{
+                  fontFamily: style.fontStack || "var(--font-body, inherit)",
+                  fontSize: formatPxValue(style.fontSizePx, "0.875rem"),
+                  fontWeight: style.fontWeight ?? 600,
+                  lineHeight: style.lineHeightRatio ?? undefined,
+                  letterSpacing:
+                    style.letterSpacingPx != null ? `${style.letterSpacingPx}px` : undefined,
+                  textTransform: style.textTransform ?? undefined,
+                  textDecoration:
+                    style.textDecoration && style.textDecoration !== "none"
+                      ? style.textDecoration
+                      : undefined,
+                  color: resolveTextColor(style, role === "buttonPrimary" ? "var(--paper)" : "var(--foreground)"),
+                  backgroundColor: resolveBackgroundColor(
+                    style,
+                    role === "buttonPrimary" ? "var(--accent)" : "transparent"
+                  ),
+                  borderRadius: resolveBorderRadius(style, "var(--button-radius, 0.95rem)"),
+                  border: resolveBorder(style, "var(--line)"),
+                  height: formatPxValue(style.heightPx, "2.75rem"),
+                  paddingLeft: formatPxValue(style.paddingXpx, "1.25rem"),
+                  paddingRight: formatPxValue(style.paddingXpx, "1.25rem"),
+                }}
+              >
+                {formatPreviewLabel(label, index)}: {sample}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
-        {/* Card preview */}
-        <div
-          className="border border-[var(--line)] bg-[color:var(--panel)] p-4 transition-all duration-300"
-          style={{ borderRadius: cardRadius }}
-        >
-          <div className="h-16 rounded-lg bg-[var(--skeleton)]" />
-          <h4
-            className="mt-3 font-semibold tracking-tight text-[var(--foreground)]"
-            style={{
-              fontFamily: "var(--font-display, inherit)",
-              fontSize: cs?.cardTitle?.fontSizePx
-                ? `${Math.round(cs.cardTitle.fontSizePx)}px`
-                : "1.125rem",
-              fontWeight: cs?.cardTitle?.fontWeight ?? 600,
-            }}
-          >
-            Card title
-          </h4>
-          <p
-            className="mt-1 text-sm text-[var(--muted)]"
-            style={{
-              fontFamily: "var(--font-body, inherit)",
-              fontSize: cs?.cardBody?.fontSizePx
-                ? `${Math.round(cs.cardBody.fontSizePx)}px`
-                : "0.875rem",
-            }}
-          >
-            Sample card with extracted radius and surface.
+        {cardPreviewCount > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {Array.from({ length: Math.min(cardPreviewCount, 2) }, (_, index) => {
+              const titleStyle = cardTitlePreviews[index] ?? cardTitlePreviews[0];
+              const bodyStyle = cardBodyPreviews[index] ?? cardBodyPreviews[0];
+              const cardRadius = resolveBorderRadius(
+                titleStyle ?? bodyStyle,
+                "var(--border-radius, 1.25rem)"
+              );
+
+              return (
+                <div
+                  key={`card-${index}`}
+                  className="border border-[var(--line)] bg-[color:var(--panel)] p-4 transition-all duration-300"
+                  style={{ borderRadius: cardRadius }}
+                >
+                  <div className="h-16 rounded-lg bg-[var(--skeleton)]" />
+                  {titleStyle ? (
+                    <h4
+                      className="mt-3"
+                      style={{
+                        fontFamily: titleStyle.fontStack || "var(--font-display, inherit)",
+                        fontSize: formatPxValue(titleStyle.fontSizePx, "1.125rem"),
+                        fontWeight: titleStyle.fontWeight ?? 600,
+                        lineHeight: titleStyle.lineHeightRatio ?? undefined,
+                        letterSpacing:
+                          titleStyle.letterSpacingPx != null
+                            ? `${titleStyle.letterSpacingPx}px`
+                            : undefined,
+                        textTransform: titleStyle.textTransform ?? undefined,
+                        color: resolveTextColor(titleStyle, "var(--foreground)"),
+                      }}
+                    >
+                      {formatPreviewLabel("Card title", index)}
+                    </h4>
+                  ) : null}
+                  {bodyStyle ? (
+                    <p
+                      className="mt-1"
+                      style={{
+                        fontFamily: bodyStyle.fontStack || "var(--font-body, inherit)",
+                        fontSize: formatPxValue(bodyStyle.fontSizePx, "0.875rem"),
+                        fontWeight: bodyStyle.fontWeight ?? 400,
+                        lineHeight: bodyStyle.lineHeightRatio ?? undefined,
+                        letterSpacing:
+                          bodyStyle.letterSpacingPx != null
+                            ? `${bodyStyle.letterSpacingPx}px`
+                            : undefined,
+                        textTransform: bodyStyle.textTransform ?? undefined,
+                        color: resolveTextColor(bodyStyle, "var(--muted)"),
+                      }}
+                    >
+                      Sample card with extracted radius and surface.
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {inputPreviews.length > 0 ? (
+          <div className="grid gap-3">
+            {inputPreviews.slice(0, 2).map((style, index) => (
+              <input
+                key={`input-${index}`}
+                type="text"
+                readOnly
+                value={index === 0 ? "hello@example.com" : "Second field variant"}
+                className="w-full outline-none transition-all duration-300"
+                style={{
+                  fontFamily: style.fontStack || "var(--font-body, inherit)",
+                  fontSize: formatPxValue(style.fontSizePx, "0.875rem"),
+                  fontWeight: style.fontWeight ?? 400,
+                  lineHeight: style.lineHeightRatio ?? undefined,
+                  color: resolveTextColor(style, "var(--foreground)"),
+                  backgroundColor: resolveBackgroundColor(style, "var(--panel)"),
+                  borderRadius: resolveBorderRadius(style, "var(--button-radius, 1rem)"),
+                  border: resolveBorder(style, "var(--line)"),
+                  height: formatPxValue(style.heightPx, "3rem"),
+                  paddingLeft: formatPxValue(style.paddingXpx, "1rem"),
+                  paddingRight: formatPxValue(style.paddingXpx, "1rem"),
+                }}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {buttonPreviews.length === 0 && inputPreviews.length === 0 && cardPreviewCount === 0 ? (
+          <p className="text-sm text-[var(--muted)]">
+            No control-level component roles were resolved for this page.
           </p>
-        </div>
-
-        {/* Input preview */}
-        <input
-          type="text"
-          readOnly
-          value="hello@example.com"
-          className="w-full border border-[var(--line)] bg-[color:var(--panel)] px-4 text-sm text-[var(--foreground)] outline-none transition-all duration-300 focus:border-[var(--accent)] focus:ring-2 focus:ring-[color:var(--accent)]/10"
-          style={{ borderRadius: inputRadius, height: inputHeight }}
-        />
+        ) : null}
       </div>
 
       {/* Spec data */}
@@ -544,13 +622,8 @@ function LayoutSection({ analysis }: { analysis: WebsiteAnalysis }) {
 // ─── Navigation ────────────────────────────────────────────────
 
 function NavigationSection({ analysis }: { analysis: WebsiteAnalysis }) {
-  const accentHex =
-    analysis.palette.find((s) => s.role === "accent")?.hex ?? "var(--accent)";
-  const cs = analysis.componentStyles;
-  const btnRadius =
-    cs?.buttonPrimary?.borderRadiusPx != null
-      ? `${Math.round(cs.buttonPrimary.borderRadiusPx)}px`
-      : "var(--button-radius, 0.95rem)";
+  const navLinkStyle = getRoleVariants(analysis, "navLink", 1)[0];
+  const ctaStyle = getRoleVariants(analysis, "buttonPrimary", 1)[0];
 
   return (
     <InspectorCard
@@ -567,19 +640,58 @@ function NavigationSection({ analysis }: { analysis: WebsiteAnalysis }) {
           {analysis.host}
         </span>
         <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-[var(--muted)] sm:inline">
+          <span
+            className="hidden sm:inline"
+            style={{
+              fontFamily: navLinkStyle?.fontStack || "var(--font-body, inherit)",
+              fontSize: formatPxValue(navLinkStyle?.fontSizePx, "0.875rem"),
+              fontWeight: navLinkStyle?.fontWeight ?? 500,
+              lineHeight: navLinkStyle?.lineHeightRatio ?? undefined,
+              color: resolveTextColor(navLinkStyle, "var(--muted)"),
+            }}
+          >
             Features
           </span>
-          <span className="hidden text-sm text-[var(--muted)] sm:inline">
+          <span
+            className="hidden sm:inline"
+            style={{
+              fontFamily: navLinkStyle?.fontStack || "var(--font-body, inherit)",
+              fontSize: formatPxValue(navLinkStyle?.fontSizePx, "0.875rem"),
+              fontWeight: navLinkStyle?.fontWeight ?? 500,
+              lineHeight: navLinkStyle?.lineHeightRatio ?? undefined,
+              color: resolveTextColor(navLinkStyle, "var(--muted)"),
+            }}
+          >
             Pricing
           </span>
-          <span className="hidden text-sm text-[var(--muted)] md:inline">
+          <span
+            className="hidden md:inline"
+            style={{
+              fontFamily: navLinkStyle?.fontStack || "var(--font-body, inherit)",
+              fontSize: formatPxValue(navLinkStyle?.fontSizePx, "0.875rem"),
+              fontWeight: navLinkStyle?.fontWeight ?? 500,
+              lineHeight: navLinkStyle?.lineHeightRatio ?? undefined,
+              color: resolveTextColor(navLinkStyle, "var(--muted)"),
+            }}
+          >
             Docs
           </span>
           {analysis.header.hasCta ? (
             <span
-              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[var(--paper)] transition-all duration-300"
-              style={{ backgroundColor: accentHex, borderRadius: btnRadius }}
+              className="inline-flex items-center transition-all duration-300"
+              style={{
+                fontFamily: ctaStyle?.fontStack || "var(--font-body, inherit)",
+                fontSize: formatPxValue(ctaStyle?.fontSizePx, "0.75rem"),
+                fontWeight: ctaStyle?.fontWeight ?? 600,
+                lineHeight: ctaStyle?.lineHeightRatio ?? undefined,
+                color: resolveTextColor(ctaStyle, "var(--paper)"),
+                backgroundColor: resolveBackgroundColor(ctaStyle, "var(--accent)"),
+                borderRadius: resolveBorderRadius(ctaStyle, "var(--button-radius, 0.95rem)"),
+                border: resolveBorder(ctaStyle, "var(--line)"),
+                height: formatPxValue(ctaStyle?.heightPx, "2rem"),
+                paddingLeft: formatPxValue(ctaStyle?.paddingXpx, "0.625rem"),
+                paddingRight: formatPxValue(ctaStyle?.paddingXpx, "0.625rem"),
+              }}
             >
               Get started
             </span>
