@@ -270,6 +270,7 @@ export async function GET(request: NextRequest) {
                   >
                     <div
                       style={{
+                        flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         gap: "4px",
@@ -305,6 +306,7 @@ export async function GET(request: NextRequest) {
                     />
                     <div
                       style={{
+                        flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         gap: "4px",
@@ -341,6 +343,7 @@ export async function GET(request: NextRequest) {
                         />
                         <div
                           style={{
+                            flex: 1,
                             display: "flex",
                             flexDirection: "column",
                             gap: "4px",
