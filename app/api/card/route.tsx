@@ -162,35 +162,7 @@ export async function GET(request: NextRequest) {
                   >
                     {host}
                   </div>
-                  <div
-                    style={{
-                      width: "56px",
-                      height: "1px",
-                      background: frameBorder,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color: faint,
-                    }}
-                  >
-                    Design DNA
-                  </div>
                 </div>
-              </div>
-
-              <div
-                style={{
-                  fontSize: "10px",
-                  letterSpacing: "0.28em",
-                  textTransform: "uppercase",
-                  color: faint,
-                }}
-              >
-                Design DNA
               </div>
             </div>
 
