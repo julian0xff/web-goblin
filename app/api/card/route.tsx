@@ -184,36 +184,13 @@ export async function GET(request: NextRequest) {
 
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  gap: "8px",
+                  fontSize: "10px",
+                  letterSpacing: "0.28em",
+                  textTransform: "uppercase",
+                  color: faint,
                 }}
               >
-                <div
-                  style={{
-                    fontSize: "10px",
-                    letterSpacing: "0.28em",
-                    textTransform: "uppercase",
-                    color: faint,
-                  }}
-                >
-                  Audit Sheet
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: ink,
-                    background: accentSoft,
-                    borderRadius: "999px",
-                    padding: "6px 12px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {primaryTags[0] ?? "visual system"}
-                </div>
+                Design DNA
               </div>
             </div>
 
