@@ -64,10 +64,9 @@ const TEXT_ROLE_CONFIG: Array<{
 const BUTTON_ROLE_CONFIG: Array<{
   role: StyleRole;
   label: string;
-  sample: string;
 }> = [
-  { role: "buttonPrimary", label: "Primary", sample: "Primary action" },
-  { role: "buttonSecondary", label: "Secondary", sample: "Secondary action" },
+  { role: "buttonPrimary", label: "Primary" },
+  { role: "buttonSecondary", label: "Secondary" },
 ];
 
 function getRoleVariants(
@@ -129,6 +128,30 @@ function resolveBorder(
     return `${Math.max(1, Math.round(style.borderWidthPx))}px solid ${resolveTextColor(style, fallbackColor)}`;
   }
   return `1px solid ${fallbackColor}`;
+}
+
+function buttonPreviewText(role: StyleRole, index: number): string {
+  if (role === "buttonPrimary") {
+    return index === 0 ? "Get started" : "Try it free";
+  }
+  if (role === "buttonSecondary") {
+    return index === 0 ? "Learn more" : "See details";
+  }
+  return "Action";
+}
+
+function inputPreviewValue(index: number): string {
+  return index === 0 ? "hello@example.com" : "team@company.com";
+}
+
+function cardPreviewTitle(index: number): string {
+  return index === 0 ? "Organize work faster" : "Keep projects moving";
+}
+
+function cardPreviewBody(index: number): string {
+  return index === 0
+    ? "Structured preview of the extracted card styling."
+    : "Alternate variant showing spacing, type, and surface treatment.";
 }
 
 // ─── Result Header ─────────────────────────────────────────────
@@ -445,38 +468,42 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
     >
       <div className="mb-5 space-y-4 border-b border-[var(--line)] pb-5">
         {buttonPreviews.length > 0 ? (
-          <div className="flex flex-wrap gap-3">
-            {buttonPreviews.map(({ label, sample, style, index, role }) => (
-              <button
-                key={`${role}-${index}`}
-                type="button"
-                className="inline-flex items-center justify-center transition-all duration-300"
-                style={{
-                  fontFamily: style.fontStack || "var(--font-body, inherit)",
-                  fontSize: formatPxValue(style.fontSizePx, "0.875rem"),
-                  fontWeight: style.fontWeight ?? 600,
-                  lineHeight: style.lineHeightRatio ?? undefined,
-                  letterSpacing:
-                    style.letterSpacingPx != null ? `${style.letterSpacingPx}px` : undefined,
-                  textTransform: style.textTransform ?? undefined,
-                  textDecoration:
-                    style.textDecoration && style.textDecoration !== "none"
-                      ? style.textDecoration
-                      : undefined,
-                  color: resolveTextColor(style, role === "buttonPrimary" ? "var(--paper)" : "var(--foreground)"),
-                  backgroundColor: resolveBackgroundColor(
-                    style,
-                    role === "buttonPrimary" ? "var(--accent)" : "transparent"
-                  ),
-                  borderRadius: resolveBorderRadius(style, "var(--button-radius, 0.95rem)"),
-                  border: resolveBorder(style, "var(--line)"),
-                  height: formatPxValue(style.heightPx, "2.75rem"),
-                  paddingLeft: formatPxValue(style.paddingXpx, "1.25rem"),
-                  paddingRight: formatPxValue(style.paddingXpx, "1.25rem"),
-                }}
-              >
-                {formatPreviewLabel(label, index)}: {sample}
-              </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {buttonPreviews.map(({ label, style, index, role }) => (
+              <div key={`${role}-${index}`} className="space-y-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                  {formatPreviewLabel(label, index)}
+                </p>
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center transition-all duration-300"
+                  style={{
+                    fontFamily: style.fontStack || "var(--font-body, inherit)",
+                    fontSize: formatPxValue(style.fontSizePx, "0.875rem"),
+                    fontWeight: style.fontWeight ?? 600,
+                    lineHeight: style.lineHeightRatio ?? undefined,
+                    letterSpacing:
+                      style.letterSpacingPx != null ? `${style.letterSpacingPx}px` : undefined,
+                    textTransform: style.textTransform ?? undefined,
+                    textDecoration:
+                      style.textDecoration && style.textDecoration !== "none"
+                        ? style.textDecoration
+                        : undefined,
+                    color: resolveTextColor(style, role === "buttonPrimary" ? "var(--paper)" : "var(--foreground)"),
+                    backgroundColor: resolveBackgroundColor(
+                      style,
+                      role === "buttonPrimary" ? "var(--accent)" : "transparent"
+                    ),
+                    borderRadius: resolveBorderRadius(style, "var(--button-radius, 0.95rem)"),
+                    border: resolveBorder(style, "var(--line)"),
+                    height: formatPxValue(style.heightPx, "2.75rem"),
+                    paddingLeft: formatPxValue(style.paddingXpx, "1.25rem"),
+                    paddingRight: formatPxValue(style.paddingXpx, "1.25rem"),
+                  }}
+                >
+                  {buttonPreviewText(role, index)}
+                </button>
+              </div>
             ))}
           </div>
         ) : null}
@@ -495,75 +522,74 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
                   titleStyle?.backgroundColor ?? bodyStyle?.backgroundColor,
                 textColors: [titleStyle?.color, bodyStyle?.color],
               });
-              const cardBorderColor = resolveCardPreviewBorderColor(cardSurface);
+              const cardBorderColor = resolveCardPreviewBorderColor(cardSurface.color);
+              const useExtractedCardText = cardSurface.source === "explicit";
 
               return (
-                <div
-                  key={`card-${index}`}
-                  className="border p-4 transition-all duration-300"
-                  style={{
-                    borderRadius: cardRadius,
-                    backgroundColor: cardSurface,
-                    borderColor: cardBorderColor,
-                  }}
-                >
+                <div key={`card-${index}`} className="space-y-2">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    {formatPreviewLabel("Card", index)}
+                  </p>
                   <div
-                    className="h-16 rounded-lg"
+                    className="border p-4 transition-all duration-300"
                     style={{
-                      backgroundColor:
-                        cardSurface === "var(--foreground)"
-                          ? "rgba(255,255,255,0.08)"
-                          : "var(--skeleton)",
+                      borderRadius: cardRadius,
+                      backgroundColor: cardSurface.color,
+                      borderColor: cardBorderColor,
                     }}
-                  />
-                  {titleStyle ? (
-                    <h4
-                      className="mt-3"
+                  >
+                    <div
+                      className="h-16 rounded-lg"
                       style={{
-                        fontFamily: titleStyle.fontStack || "var(--font-display, inherit)",
-                        fontSize: formatPxValue(titleStyle.fontSizePx, "1.125rem"),
-                        fontWeight: titleStyle.fontWeight ?? 600,
-                        lineHeight: titleStyle.lineHeightRatio ?? undefined,
-                        letterSpacing:
-                          titleStyle.letterSpacingPx != null
-                            ? `${titleStyle.letterSpacingPx}px`
-                            : undefined,
-                        textTransform: titleStyle.textTransform ?? undefined,
-                        color: resolveTextColor(
-                          titleStyle,
-                          cardSurface === "var(--foreground)"
-                            ? "#ffffff"
-                            : "var(--foreground)"
-                        ),
+                        backgroundColor:
+                          cardSurface.color === "var(--foreground)"
+                            ? "rgba(255,255,255,0.08)"
+                            : "var(--skeleton)",
                       }}
-                    >
-                      {formatPreviewLabel("Card title", index)}
-                    </h4>
-                  ) : null}
-                  {bodyStyle ? (
-                    <p
-                      className="mt-1"
-                      style={{
-                        fontFamily: bodyStyle.fontStack || "var(--font-body, inherit)",
-                        fontSize: formatPxValue(bodyStyle.fontSizePx, "0.875rem"),
-                        fontWeight: bodyStyle.fontWeight ?? 400,
-                        lineHeight: bodyStyle.lineHeightRatio ?? undefined,
-                        letterSpacing:
-                          bodyStyle.letterSpacingPx != null
-                            ? `${bodyStyle.letterSpacingPx}px`
-                            : undefined,
-                        textTransform: bodyStyle.textTransform ?? undefined,
-                        color: resolveTextColor(
-                          bodyStyle,
-                          cardSurface === "var(--foreground)"
-                            ? "rgba(255,255,255,0.72)"
-                            : "var(--muted)"
-                        ),
-                      }}
-                    >
-                      Sample card with extracted radius and surface.
-                    </p>
-                  ) : null}
+                    />
+                    {titleStyle ? (
+                      <h4
+                        className="mt-3"
+                        style={{
+                          fontFamily: titleStyle.fontStack || "var(--font-display, inherit)",
+                          fontSize: formatPxValue(titleStyle.fontSizePx, "1.125rem"),
+                          fontWeight: titleStyle.fontWeight ?? 600,
+                          lineHeight: titleStyle.lineHeightRatio ?? undefined,
+                          letterSpacing:
+                            titleStyle.letterSpacingPx != null
+                              ? `${titleStyle.letterSpacingPx}px`
+                              : undefined,
+                          textTransform: titleStyle.textTransform ?? undefined,
+                          color: useExtractedCardText
+                            ? resolveTextColor(titleStyle, "var(--foreground)")
+                            : "var(--foreground)",
+                        }}
+                      >
+                        {cardPreviewTitle(index)}
+                      </h4>
+                    ) : null}
+                    {bodyStyle ? (
+                      <p
+                        className="mt-1"
+                        style={{
+                          fontFamily: bodyStyle.fontStack || "var(--font-body, inherit)",
+                          fontSize: formatPxValue(bodyStyle.fontSizePx, "0.875rem"),
+                          fontWeight: bodyStyle.fontWeight ?? 400,
+                          lineHeight: bodyStyle.lineHeightRatio ?? undefined,
+                          letterSpacing:
+                            bodyStyle.letterSpacingPx != null
+                              ? `${bodyStyle.letterSpacingPx}px`
+                              : undefined,
+                          textTransform: bodyStyle.textTransform ?? undefined,
+                          color: useExtractedCardText
+                            ? resolveTextColor(bodyStyle, "var(--muted)")
+                            : "var(--muted)",
+                        }}
+                      >
+                        {cardPreviewBody(index)}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               );
             })}
@@ -573,26 +599,30 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
         {inputPreviews.length > 0 ? (
           <div className="grid gap-3">
             {inputPreviews.slice(0, 2).map((style, index) => (
-              <input
-                key={`input-${index}`}
-                type="text"
-                readOnly
-                value={index === 0 ? "hello@example.com" : "Second field variant"}
-                className="w-full outline-none transition-all duration-300"
-                style={{
-                  fontFamily: style.fontStack || "var(--font-body, inherit)",
-                  fontSize: formatPxValue(style.fontSizePx, "0.875rem"),
-                  fontWeight: style.fontWeight ?? 400,
-                  lineHeight: style.lineHeightRatio ?? undefined,
-                  color: resolveTextColor(style, "var(--foreground)"),
-                  backgroundColor: resolveBackgroundColor(style, "var(--panel)"),
-                  borderRadius: resolveBorderRadius(style, "var(--button-radius, 1rem)"),
-                  border: resolveBorder(style, "var(--line)"),
-                  height: formatPxValue(style.heightPx, "3rem"),
-                  paddingLeft: formatPxValue(style.paddingXpx, "1rem"),
-                  paddingRight: formatPxValue(style.paddingXpx, "1rem"),
-                }}
-              />
+              <div key={`input-${index}`} className="space-y-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                  {formatPreviewLabel("Input", index)}
+                </p>
+                <input
+                  type="text"
+                  readOnly
+                  value={inputPreviewValue(index)}
+                  className="w-full outline-none transition-all duration-300"
+                  style={{
+                    fontFamily: style.fontStack || "var(--font-body, inherit)",
+                    fontSize: formatPxValue(style.fontSizePx, "0.875rem"),
+                    fontWeight: style.fontWeight ?? 400,
+                    lineHeight: style.lineHeightRatio ?? undefined,
+                    color: resolveTextColor(style, "var(--foreground)"),
+                    backgroundColor: resolveBackgroundColor(style, "var(--panel)"),
+                    borderRadius: resolveBorderRadius(style, "var(--button-radius, 1rem)"),
+                    border: resolveBorder(style, "var(--line)"),
+                    height: formatPxValue(style.heightPx, "3rem"),
+                    paddingLeft: formatPxValue(style.paddingXpx, "1rem"),
+                    paddingRight: formatPxValue(style.paddingXpx, "1rem"),
+                  }}
+                />
+              </div>
             ))}
           </div>
         ) : null}

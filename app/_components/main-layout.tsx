@@ -10,6 +10,7 @@ import { AnalysisProvider, useAnalysis, EXAMPLE_URLS } from "./analysis-context"
 import { ThemeEngine } from "./theme-engine";
 import { MarketingContent, LoadingSkeleton } from "./style-showcase";
 import { ResultsView } from "./goblin-console";
+import { HeroIllustration } from "./hero-illustration";
 
 export function MainLayout() {
   return (
@@ -40,13 +41,12 @@ function PageContent() {
       <div className="relative mx-auto max-w-[1080px] px-5 pb-20 pt-12 md:px-8 md:pb-28 md:pt-20">
         {/* Page header */}
         <header className="mb-10 text-center md:mb-14">
-          <p
+          <div
             data-animate
             style={{ "--delay": "0ms" } as React.CSSProperties}
-            className="text-xs font-medium uppercase tracking-[0.32em] text-[var(--accent)]"
           >
-            Web Goblin
-          </p>
+            <HeroIllustration />
+          </div>
           <h1
             data-animate
             style={{ "--delay": "80ms" } as React.CSSProperties}

@@ -26,16 +26,16 @@ describe("preview utils", () => {
         explicitBackgroundColor: "#111111",
         textColors: ["#ffffff"],
       })
-    ).toBe("#111111");
+    ).toEqual({ color: "#111111", source: "explicit" });
   });
 
-  test("falls back to dark surface when card text is light", () => {
+  test("does not invent a dark card surface from light text alone", () => {
     expect(
       resolveCardPreviewSurface({
         explicitBackgroundColor: null,
         textColors: ["#f5f5f7"],
       })
-    ).toBe("var(--foreground)");
+    ).toEqual({ color: "var(--panel)", source: "fallback" });
     expect(resolveCardPreviewBorderColor("var(--foreground)")).toBe("rgba(255,255,255,0.12)");
   });
 
@@ -45,7 +45,7 @@ describe("preview utils", () => {
         explicitBackgroundColor: null,
         textColors: ["#1d1d1f"],
       })
-    ).toBe("var(--panel)");
+    ).toEqual({ color: "var(--panel)", source: "fallback" });
     expect(resolveCardPreviewBorderColor("var(--panel)")).toBe("var(--line)");
   });
 });

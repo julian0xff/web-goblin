@@ -76,32 +76,45 @@ export function isLightColor(color: string | null | undefined): boolean | null {
   return luminance > 0.58;
 }
 
+export type CardPreviewSurface = {
+  color: string;
+  source: "explicit" | "fallback";
+};
+
 export function resolveCardPreviewSurface(
   options: {
     explicitBackgroundColor?: string | null;
     textColors: Array<string | null | undefined>;
     defaultSurface?: string;
-    darkSurface?: string;
   }
-): string {
+): CardPreviewSurface {
   const {
     explicitBackgroundColor,
     textColors,
     defaultSurface = "var(--panel)",
-    darkSurface = "var(--foreground)",
   } = options;
 
   if (!isTransparentLike(explicitBackgroundColor)) {
-    return explicitBackgroundColor!;
+    return {
+      color: explicitBackgroundColor!,
+      source: "explicit",
+    };
   }
 
   for (const textColor of textColors) {
     const light = isLightColor(textColor);
-    if (light === true) return darkSurface;
-    if (light === false) return defaultSurface;
+    if (light === true || light === false) {
+      return {
+        color: defaultSurface,
+        source: "fallback",
+      };
+    }
   }
 
-  return defaultSurface;
+  return {
+    color: defaultSurface,
+    source: "fallback",
+  };
 }
 
 export function resolveCardPreviewBorderColor(surface: string): string {
