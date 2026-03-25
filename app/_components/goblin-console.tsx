@@ -14,6 +14,10 @@ import {
   XLogoIcon as XLogo,
 } from "@phosphor-icons/react";
 import type { ComponentStyle, StyleRole } from "@/lib/analysis-types";
+import {
+  resolveCardPreviewBorderColor,
+  resolveCardPreviewSurface,
+} from "@/lib/preview-utils";
 import type { WebsiteAnalysis } from "@/lib/site-analysis";
 
 // ─── Main Results View ─────────────────────────────────────────
@@ -486,14 +490,32 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
                 titleStyle ?? bodyStyle,
                 "var(--border-radius, 1.25rem)"
               );
+              const cardSurface = resolveCardPreviewSurface({
+                explicitBackgroundColor:
+                  titleStyle?.backgroundColor ?? bodyStyle?.backgroundColor,
+                textColors: [titleStyle?.color, bodyStyle?.color],
+              });
+              const cardBorderColor = resolveCardPreviewBorderColor(cardSurface);
 
               return (
                 <div
                   key={`card-${index}`}
-                  className="border border-[var(--line)] bg-[color:var(--panel)] p-4 transition-all duration-300"
-                  style={{ borderRadius: cardRadius }}
+                  className="border p-4 transition-all duration-300"
+                  style={{
+                    borderRadius: cardRadius,
+                    backgroundColor: cardSurface,
+                    borderColor: cardBorderColor,
+                  }}
                 >
-                  <div className="h-16 rounded-lg bg-[var(--skeleton)]" />
+                  <div
+                    className="h-16 rounded-lg"
+                    style={{
+                      backgroundColor:
+                        cardSurface === "var(--foreground)"
+                          ? "rgba(255,255,255,0.08)"
+                          : "var(--skeleton)",
+                    }}
+                  />
                   {titleStyle ? (
                     <h4
                       className="mt-3"
@@ -507,7 +529,12 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
                             ? `${titleStyle.letterSpacingPx}px`
                             : undefined,
                         textTransform: titleStyle.textTransform ?? undefined,
-                        color: resolveTextColor(titleStyle, "var(--foreground)"),
+                        color: resolveTextColor(
+                          titleStyle,
+                          cardSurface === "var(--foreground)"
+                            ? "#ffffff"
+                            : "var(--foreground)"
+                        ),
                       }}
                     >
                       {formatPreviewLabel("Card title", index)}
@@ -526,7 +553,12 @@ function ControlsSection({ analysis }: { analysis: WebsiteAnalysis }) {
                             ? `${bodyStyle.letterSpacingPx}px`
                             : undefined,
                         textTransform: bodyStyle.textTransform ?? undefined,
-                        color: resolveTextColor(bodyStyle, "var(--muted)"),
+                        color: resolveTextColor(
+                          bodyStyle,
+                          cardSurface === "var(--foreground)"
+                            ? "rgba(255,255,255,0.72)"
+                            : "var(--muted)"
+                        ),
                       }}
                     >
                       Sample card with extracted radius and surface.
