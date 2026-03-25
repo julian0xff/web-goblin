@@ -158,6 +158,11 @@ describe("extractComponentStyles", () => {
       <html>
       <body>
         <nav>
+          <a href="/" class="nav-item">
+            <div class="top">
+              <div class="icon-text white">Heuristic 1</div>
+            </div>
+          </a>
           <a href="/" class="button black medium">
             <div class="top">
               <div class="icon-text white">Start with heuristic 1</div>
@@ -172,6 +177,9 @@ describe("extractComponentStyles", () => {
         background-color: #222;
         border-radius: 6px;
         padding: .5rem .75rem;
+      }
+      .nav-item {
+        padding: .25rem .5rem;
       }
       .icon-text.white {
         color: #fff;
@@ -200,6 +208,61 @@ describe("extractComponentStyles", () => {
     expect(styles.buttonPrimary!.fontSizePx).toBeCloseTo(13.008, 2);
     expect(styles.buttonPrimary!.color).toBe("#fff");
     expect(styles.buttonPrimary!.backgroundColor).toBe("#222");
+    expect(styles.buttonPrimary!.borderRadiusPx).toBe(6);
+  });
+
+  test("button extraction resolves fill from nested surface layers and skips CTA shells for generic links", () => {
+    const html = `
+      <html>
+      <body>
+        <main>
+          <a href="/docs" class="copy-link">Read docs</a>
+          <a href="/signup" class="style_button style_light">
+            <span class="style_background"></span>
+            <span class="style_body">Sign up for free</span>
+          </a>
+        </main>
+      </body>
+      </html>
+    `;
+    const css = `
+      .copy-link {
+        color: #6b53ff;
+        font-family: "Eina01", sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .style_button {
+        height: 48px;
+        padding: 0 32px;
+        border-radius: 6px;
+        background: none;
+        color: transparent;
+      }
+      .style_background {
+        background-color: #6b53ff;
+        border-radius: 6px;
+      }
+      .style_body {
+        color: #fff;
+        font-family: "Eina01", sans-serif;
+        font-size: 16px;
+        line-height: 1.1;
+      }
+    `;
+
+    const $ = load(html);
+    const rules = parseCss(css, "test");
+    const styles = extractComponentStyles($, rules);
+
+    expect(styles.link).toBeDefined();
+    expect(styles.link!.color).toBe("#6b53ff");
+    expect(styles.link!.backgroundColor).toBeNull();
+
+    expect(styles.buttonPrimary).toBeDefined();
+    expect(styles.buttonPrimary!.fontSizePx).toBe(16);
+    expect(styles.buttonPrimary!.color).toBe("#fff");
+    expect(styles.buttonPrimary!.backgroundColor).toBe("#6b53ff");
     expect(styles.buttonPrimary!.borderRadiusPx).toBe(6);
   });
 

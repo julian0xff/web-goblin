@@ -292,7 +292,7 @@ function findAndResolveRoleVariants(
       scopedVars
     );
 
-    const componentStyle = mergeTextChildStyle(
+    const componentStyle = mergeControlAndTextChildStyle(
       $,
       el,
       finder,
@@ -337,6 +337,7 @@ function collectCandidateSeeds(
     for (let i = 0; i < limit; i++) {
       const el = elements.eq(i);
       if (!isVisible($, el)) continue;
+      if (shouldRejectElementForRole(el, finder.role)) continue;
 
       const text = el.text().trim();
       if (finder.minTextLength && text.length < finder.minTextLength) continue;
@@ -498,6 +499,19 @@ function scoreResolvedCandidate(
     if (componentStyle.borderRadiusPx != null) score += 2;
     if (componentStyle.heightPx != null) score += 2;
     if (componentStyle.paddingXpx != null) score += 1;
+
+    if (finder.role === "buttonPrimary") {
+      if (
+        componentStyle.backgroundColor == null ||
+        componentStyle.backgroundColor === "transparent" ||
+        componentStyle.backgroundColor === "none"
+      ) {
+        score -= 4;
+      }
+      if (componentStyle.color === "transparent") {
+        score -= 4;
+      }
+    }
   }
 
   if (isCardRole(finder.role)) {
@@ -799,6 +813,26 @@ function normalizeColorValue(value: string | undefined): string | null {
   return trimmed;
 }
 
+function shouldRejectElementForRole(
+  el: Cheerio<AnyNode>,
+  role: StyleRole
+): boolean {
+  const semanticTokens = [
+    el.attr("class") ?? "",
+    el.attr("id") ?? "",
+    el.attr("role") ?? "",
+    el.attr("data-testid") ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if ((role === "link" || role === "navLink") && /button|btn|cta/.test(semanticTokens)) {
+    return true;
+  }
+
+  return false;
+}
+
 function scoreCardContext($: CheerioAPI, el: Cheerio<AnyNode>): number {
   return scoreCardContextFromNode(findBestCardContainer($, el));
 }
@@ -867,7 +901,7 @@ function findBestCardContainer(
   return best?.el ?? null;
 }
 
-function mergeTextChildStyle(
+function mergeControlAndTextChildStyle(
   $: CheerioAPI,
   el: Cheerio<AnyNode>,
   finder: RoleFinder,
@@ -875,43 +909,70 @@ function mergeTextChildStyle(
   rootStyles: Record<string, string>,
   baseStyle: ComponentStyle
 ): ComponentStyle {
-  if (!usesNestedTextStyles(finder.role)) {
-    return baseStyle;
+  let mergedStyle = baseStyle;
+
+  if (usesNestedTextStyles(finder.role)) {
+    const textEl = findRepresentativeTextDescendant($, el, finder.minTextLength ?? 1);
+    if (textEl && textEl.get(0) !== el.get(0)) {
+      const textAncestors = getAncestorElements($, textEl);
+      const scopedVars = extractCustomProperties(rules, $, [...textAncestors, textEl]);
+      const ancestorStyles = resolveAncestorStyles($, textEl, rules, scopedVars, rootStyles);
+      const tag = ((textEl.prop("tagName") ?? "") as string).toLowerCase() || finder.tagFallback;
+      const textResolved = resolveStylesForElement(
+        $,
+        textEl,
+        tag,
+        ancestorStyles,
+        textEl.attr("style") ?? null,
+        rules,
+        scopedVars
+      );
+      const textStyle = mapToComponentStyle(textResolved, buildElementSelector(textEl, tag), finder);
+
+      mergedStyle = {
+        ...mergedStyle,
+        fontStack: textStyle.fontStack || mergedStyle.fontStack,
+        primaryFamily: textStyle.primaryFamily || mergedStyle.primaryFamily,
+        fontSizePx: textStyle.fontSizePx ?? mergedStyle.fontSizePx,
+        fontWeight: textStyle.fontWeight ?? mergedStyle.fontWeight,
+        lineHeightPx: textStyle.lineHeightPx ?? mergedStyle.lineHeightPx,
+        lineHeightRatio: textStyle.lineHeightRatio ?? mergedStyle.lineHeightRatio,
+        letterSpacingPx: textStyle.letterSpacingPx ?? mergedStyle.letterSpacingPx,
+        textTransform: textStyle.textTransform ?? mergedStyle.textTransform,
+        textDecoration: preferDefined(textStyle.textDecoration, mergedStyle.textDecoration),
+        color: preferTextColor(textStyle.color, mergedStyle.color),
+      };
+    }
   }
 
-  const textEl = findRepresentativeTextDescendant($, el, finder.minTextLength ?? 1);
-  if (!textEl || textEl.get(0) === el.get(0)) {
-    return baseStyle;
+  if (isControlRole(finder.role)) {
+    const surfaceEl = findRepresentativeSurfaceDescendant($, el, rules, rootStyles);
+    if (surfaceEl && surfaceEl.get(0) !== el.get(0)) {
+      const surfaceAncestors = getAncestorElements($, surfaceEl);
+      const scopedVars = extractCustomProperties(rules, $, [...surfaceAncestors, surfaceEl]);
+      const ancestorStyles = resolveAncestorStyles($, surfaceEl, rules, scopedVars, rootStyles);
+      const tag = ((surfaceEl.prop("tagName") ?? "") as string).toLowerCase() || "div";
+      const surfaceResolved = resolveStylesForElement(
+        $,
+        surfaceEl,
+        tag,
+        ancestorStyles,
+        surfaceEl.attr("style") ?? null,
+        rules,
+        scopedVars
+      );
+      const surfaceStyle = mapToComponentStyle(surfaceResolved, buildElementSelector(surfaceEl, tag), finder);
+
+      mergedStyle = {
+        ...mergedStyle,
+        backgroundColor: preferSurfaceValue(surfaceStyle.backgroundColor, mergedStyle.backgroundColor),
+        borderRadiusPx: surfaceStyle.borderRadiusPx ?? mergedStyle.borderRadiusPx,
+        borderWidthPx: surfaceStyle.borderWidthPx ?? mergedStyle.borderWidthPx,
+      };
+    }
   }
 
-  const textAncestors = getAncestorElements($, textEl);
-  const scopedVars = extractCustomProperties(rules, $, [...textAncestors, textEl]);
-  const ancestorStyles = resolveAncestorStyles($, textEl, rules, scopedVars, rootStyles);
-  const tag = ((textEl.prop("tagName") ?? "") as string).toLowerCase() || finder.tagFallback;
-  const textResolved = resolveStylesForElement(
-    $,
-    textEl,
-    tag,
-    ancestorStyles,
-    textEl.attr("style") ?? null,
-    rules,
-    scopedVars
-  );
-  const textStyle = mapToComponentStyle(textResolved, buildElementSelector(textEl, tag), finder);
-
-  return {
-    ...baseStyle,
-    fontStack: textStyle.fontStack || baseStyle.fontStack,
-    primaryFamily: textStyle.primaryFamily || baseStyle.primaryFamily,
-    fontSizePx: textStyle.fontSizePx ?? baseStyle.fontSizePx,
-    fontWeight: textStyle.fontWeight ?? baseStyle.fontWeight,
-    lineHeightPx: textStyle.lineHeightPx ?? baseStyle.lineHeightPx,
-    lineHeightRatio: textStyle.lineHeightRatio ?? baseStyle.lineHeightRatio,
-    letterSpacingPx: textStyle.letterSpacingPx ?? baseStyle.letterSpacingPx,
-    textTransform: textStyle.textTransform ?? baseStyle.textTransform,
-    textDecoration: preferDefined(textStyle.textDecoration, baseStyle.textDecoration),
-    color: preferTextColor(textStyle.color, baseStyle.color),
-  };
+  return mergedStyle;
 }
 
 function usesNestedTextStyles(role: StyleRole): boolean {
@@ -961,6 +1022,70 @@ function scoreTextDescendantCandidate(el: Cheerio<AnyNode>, text: string): numbe
   return score;
 }
 
+function findRepresentativeSurfaceDescendant(
+  $: CheerioAPI,
+  el: Cheerio<AnyNode>,
+  rules: NormalizedRule[],
+  rootStyles: Record<string, string>
+): Cheerio<AnyNode> | null {
+  const descendants = el.find("*").toArray().slice(0, 30);
+  let best: { el: Cheerio<AnyNode>; score: number } | null = null;
+
+  for (const node of descendants) {
+    const candidate = $(node);
+    if (!isVisible($, candidate)) continue;
+
+    const tag = ((candidate.prop("tagName") ?? "") as string).toLowerCase();
+    if (!tag || ["svg", "img", "path", "picture", "video"].includes(tag)) continue;
+
+    const ancestors = getAncestorElements($, candidate);
+    const scopedVars = extractCustomProperties(rules, $, [...ancestors, candidate]);
+    const ancestorStyles = resolveAncestorStyles($, candidate, rules, scopedVars, rootStyles);
+    const resolved = resolveStylesForElement(
+      $,
+      candidate,
+      tag,
+      ancestorStyles,
+      candidate.attr("style") ?? null,
+      rules,
+      scopedVars
+    );
+    const style = mapToComponentStyle(resolved, buildElementSelector(candidate, tag), {
+      role: "buttonPrimary",
+      selectors: [],
+      tagFallback: "button",
+    });
+    const score = scoreSurfaceDescendantCandidate(candidate, style);
+    if (score <= 0) continue;
+
+    if (!best || score > best.score) {
+      best = { el: candidate, score };
+    }
+  }
+
+  return best?.el ?? null;
+}
+
+function scoreSurfaceDescendantCandidate(
+  el: Cheerio<AnyNode>,
+  style: ComponentStyle
+): number {
+  const semanticTokens = [
+    el.attr("class") ?? "",
+    el.attr("id") ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  let score = 0;
+  if (style.backgroundColor && style.backgroundColor !== "transparent" && style.backgroundColor !== "none") score += 5;
+  if (style.borderRadiusPx != null) score += 2;
+  if (style.borderWidthPx != null && style.borderWidthPx > 0) score += 1;
+  if (/(background|surface|fill|layer|overlay|body)/.test(semanticTokens)) score += 2;
+
+  return score;
+}
+
 function preferTextColor(
   preferred: string | null,
   fallback: string | null
@@ -972,6 +1097,14 @@ function preferTextColor(
 
 function preferDefined<T>(preferred: T | null, fallback: T | null): T | null {
   return preferred ?? fallback;
+}
+
+function preferSurfaceValue(
+  preferred: string | null,
+  fallback: string | null
+): string | null {
+  if (preferred && preferred !== "transparent" && preferred !== "none") return preferred;
+  return fallback;
 }
 
 const CTA_TEXT_RE =
