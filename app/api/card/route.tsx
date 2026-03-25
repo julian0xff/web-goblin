@@ -264,13 +264,13 @@ export async function GET(request: NextRequest) {
                   <div
                     style={{
                       display: "flex",
-                      gap: "32px",
+                      gap: "0px",
                       alignItems: "center",
+                      justifyContent: "space-between",
                     }}
                   >
                     <div
                       style={{
-                        flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         gap: "4px",
@@ -306,7 +306,6 @@ export async function GET(request: NextRequest) {
                     />
                     <div
                       style={{
-                        flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         gap: "4px",
