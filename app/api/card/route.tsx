@@ -358,8 +358,8 @@ export async function GET(request: NextRequest) {
 
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      display: "flex",
+                      flexWrap: "wrap",
                       gap: "12px",
                       flex: 1,
                     }}
@@ -521,6 +521,7 @@ function MetricBlock({
         border: `1px solid ${border}`,
         borderRadius: "18px",
         background: "rgba(255,255,255,0.16)",
+        width: "calc(50% - 6px)",
       }}
     >
       <div

@@ -164,8 +164,10 @@ function ResultHeader({
   onCopyPrompt: () => void;
 }) {
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
 
   const generateCardAndShare = useCallback(async () => {
+    setCardError(null);
     setIsGeneratingCard(true);
     try {
       const bgColor =
@@ -208,6 +210,7 @@ function ResultHeader({
   }, [analysis]);
 
   const downloadCard = useCallback(async () => {
+    setCardError(null);
     setIsGeneratingCard(true);
     try {
       const bgColor =
@@ -239,13 +242,26 @@ function ResultHeader({
       });
 
       const response = await fetch(`/api/card?${params.toString()}`);
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        throw new Error(body || `Card generation failed (${response.status})`);
+      }
       const blob = await response.blob();
+      if (!blob.type.includes("image")) {
+        throw new Error("Card generation returned a non-image response.");
+      }
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = `web-goblin-${analysis.host}.png`;
       anchor.click();
       URL.revokeObjectURL(url);
+    } catch (error) {
+      setCardError(
+        error instanceof Error
+          ? error.message
+          : "Card generation failed. Please try again."
+      );
     } finally {
       setIsGeneratingCard(false);
     }
@@ -313,6 +329,9 @@ function ResultHeader({
           <span className="hidden sm:inline">Open site</span>
         </a>
       </div>
+      {cardError ? (
+        <p className="mt-3 text-sm text-[var(--accent)]">{cardError}</p>
+      ) : null}
     </section>
   );
 }
