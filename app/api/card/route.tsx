@@ -11,11 +11,13 @@ export async function GET(request: NextRequest) {
   const summary = params.get("summary") ?? "";
   const tags = (params.get("tags") ?? "").split(",").filter(Boolean);
   const palette = (params.get("palette") ?? "").split(",").filter(Boolean);
-  const paletteRoles = (params.get("paletteRoles") ?? "").split(",").filter(Boolean);
+  const paletteRoles = (params.get("paletteRoles") ?? "")
+    .split(",")
+    .filter(Boolean);
   const fontDisplay = params.get("fontDisplay") ?? "Display";
   const fontBody = params.get("fontBody") ?? "Body";
   const layout = params.get("layout") ?? "";
-
+  const spacing = params.get("spacing") ?? "";
   const buttons = params.get("buttons") ?? "";
   const header = params.get("header") ?? "";
   const bg = params.get("bg") || "#ece7df";
@@ -33,29 +35,25 @@ export async function GET(request: NextRequest) {
   const swatches = palette.slice(0, 5);
 
   const truncatedTitle =
-    title.length > 52 ? `${title.slice(0, 49)}...` : title;
-  const primaryTags = tags.slice(0, 4);
-  const colorBlocks = [
-    { label: "Background", value: bg },
-    { label: "Text", value: fg },
-    { label: "Accent", value: accent },
-    { label: "Palette", value: `${palette.length} colors` },
-  ];
+    title.length > 60 ? `${title.slice(0, 57)}...` : title;
+  const primaryTags = tags.slice(0, 5);
 
   return new ImageResponse(
     (
       <div
         style={{
-          width: "1200px",
-          height: "630px",
+          width: "1800px",
+          height: "945px",
           display: "flex",
           position: "relative",
           overflow: "hidden",
           background: `linear-gradient(135deg, ${paper} 0%, ${withAlpha(accent, 0.08)} 42%, ${paper} 100%)`,
           color: ink,
-          fontFamily: "\"Avenir Next\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+          fontFamily:
+            '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
         }}
       >
+        {/* Grid texture */}
         <div
           style={{
             position: "absolute",
@@ -64,28 +62,30 @@ export async function GET(request: NextRequest) {
               linear-gradient(${withAlpha(ink, 0.04)} 1px, transparent 1px),
               linear-gradient(90deg, ${withAlpha(ink, 0.04)} 1px, transparent 1px)
             `,
-            backgroundSize: "44px 44px",
+            backgroundSize: "66px 66px",
             opacity: 0.22,
           }}
         />
 
+        {/* Main frame */}
         <div
           style={{
             position: "absolute",
-            top: "24px",
-            left: "24px",
-            right: "24px",
-            bottom: "24px",
+            top: "36px",
+            left: "36px",
+            right: "36px",
+            bottom: "36px",
             display: "flex",
-            borderRadius: "30px",
+            borderRadius: "44px",
             border: `1px solid ${frameBorder}`,
             background: withAlpha(paper, 0.9),
             overflow: "hidden",
           }}
         >
+          {/* Swatch strip */}
           <div
             style={{
-              width: "42px",
+              width: "60px",
               display: "flex",
               flexDirection: "column",
               borderRight: `1px solid ${frameBorder}`,
@@ -109,27 +109,35 @@ export async function GET(request: NextRequest) {
               : null}
           </div>
 
+          {/* Content area */}
           <div
             style={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              padding: "28px 32px 22px 32px",
+              padding: "40px 48px 34px 48px",
               overflow: "hidden",
             }}
           >
+            {/* Header row */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                marginBottom: "16px",
+                marginBottom: "24px",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                }}
+              >
                 <div
                   style={{
-                    fontSize: "11px",
+                    fontSize: "16px",
                     letterSpacing: "0.32em",
                     textTransform: "uppercase",
                     color: accent,
@@ -140,91 +148,87 @@ export async function GET(request: NextRequest) {
                 </div>
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
+                    fontSize: "17px",
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: muted,
+                    border: `1px solid ${subtleBorder}`,
+                    borderRadius: "999px",
+                    padding: "8px 20px",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color: muted,
-                      border: `1px solid ${subtleBorder}`,
-                      borderRadius: "999px",
-                      padding: "6px 14px",
-                    }}
-                  >
-                    {host}
-                  </div>
+                  {host}
                 </div>
               </div>
             </div>
 
+            {/* Two columns */}
             <div
               style={{
                 display: "flex",
-                gap: "32px",
+                gap: "44px",
                 flex: 1,
               }}
             >
+              {/* Left column */}
               <div
                 style={{
-                  width: "66%",
+                  width: "64%",
                   display: "flex",
                   flexDirection: "column",
                 }}
               >
+                {/* Title */}
                 <div
                   style={{
                     fontFamily: "Baskerville, Georgia, serif",
-                    fontSize: "34px",
+                    fontSize: "50px",
                     lineHeight: 1.1,
                     letterSpacing: "-0.03em",
                     color: ink,
                     fontWeight: 700,
-                    marginBottom: "10px",
-                    maxHeight: "78px",
+                    marginBottom: "14px",
+                    maxHeight: "116px",
                     overflow: "hidden",
                   }}
                 >
                   {truncatedTitle}
                 </div>
 
+                {/* Summary */}
                 <div
                   style={{
-                    fontSize: "14px",
+                    fontSize: "20px",
                     lineHeight: 1.6,
                     color: muted,
-                    maxWidth: "680px",
-                    marginBottom: "16px",
+                    marginBottom: "20px",
                   }}
                 >
                   {summary}
                 </div>
 
+                {/* Tags */}
                 {primaryTags.length > 0 ? (
                   <div
                     style={{
                       display: "flex",
-                      gap: "8px",
+                      gap: "10px",
                       flexWrap: "wrap",
-                      marginBottom: "14px",
+                      marginBottom: "24px",
                     }}
                   >
                     {primaryTags.map((tag) => (
                       <div
                         key={tag}
                         style={{
-                          fontSize: "11px",
+                          fontSize: "15px",
                           letterSpacing: "0.18em",
                           textTransform: "uppercase",
                           color: accent,
                           border: `1px solid ${withAlpha(accent, 0.22)}`,
                           background: accentSoft,
                           borderRadius: "999px",
-                          padding: "6px 12px",
+                          padding: "8px 16px",
                           fontWeight: 600,
                         }}
                       >
@@ -234,25 +238,159 @@ export async function GET(request: NextRequest) {
                   </div>
                 ) : null}
 
+                {/* Typography specimen */}
                 <div
                   style={{
                     display: "flex",
-                    gap: "14px",
-                    alignItems: "stretch",
-                    marginTop: "auto",
+                    flexDirection: "column",
+                    gap: "10px",
+                    padding: "20px 24px",
+                    border: `1px solid ${subtleBorder}`,
+                    borderRadius: "20px",
+                    background: withAlpha(ink, 0.02),
+                    marginBottom: "24px",
                   }}
                 >
                   <div
                     style={{
-                      width: "220px",
+                      fontSize: "13px",
+                      letterSpacing: "0.24em",
+                      textTransform: "uppercase",
+                      color: faint,
+                    }}
+                  >
+                    Typography
+                  </div>
+                  <div
+                    style={{
                       display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
+                      gap: "32px",
+                      alignItems: "baseline",
                     }}
                   >
                     <div
                       style={{
-                        fontSize: "10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "28px",
+                          fontWeight: 700,
+                          color: ink,
+                          letterSpacing: "-0.02em",
+                        }}
+                      >
+                        {fontDisplay}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: faint,
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Display
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        width: "1px",
+                        height: "40px",
+                        background: frameBorder,
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "22px",
+                          fontWeight: 400,
+                          color: ink,
+                        }}
+                      >
+                        {fontBody}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: faint,
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Body
+                      </div>
+                    </div>
+                    {spacing ? (
+                      <>
+                        <div
+                          style={{
+                            width: "1px",
+                            height: "40px",
+                            background: frameBorder,
+                          }}
+                        />
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "22px",
+                              fontWeight: 400,
+                              color: ink,
+                            }}
+                          >
+                            {spacing}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "13px",
+                              color: faint,
+                              letterSpacing: "0.1em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Spacing
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Bottom bar: palette + color blocks */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "20px",
+                    alignItems: "stretch",
+                    marginTop: "auto",
+                  }}
+                >
+                  {/* Palette swatches */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "13px",
                         letterSpacing: "0.24em",
                         textTransform: "uppercase",
                         color: faint,
@@ -260,7 +398,7 @@ export async function GET(request: NextRequest) {
                     >
                       Palette Index
                     </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "10px" }}>
                       {swatches.map((hex, index) => (
                         <div
                           key={`${hex}-${index}`}
@@ -273,20 +411,20 @@ export async function GET(request: NextRequest) {
                         >
                           <div
                             style={{
-                              width: "32px",
-                              height: "64px",
-                              borderRadius: "16px",
+                              width: "44px",
+                              height: "80px",
+                              borderRadius: "22px",
                               background: hex,
                               border: `1px solid ${withAlpha("#000000", 0.08)}`,
                             }}
                           />
                           <div
                             style={{
-                              fontSize: "8px",
+                              fontSize: "11px",
                               letterSpacing: "0.14em",
                               textTransform: "uppercase",
                               color: faint,
-                              maxWidth: "40px",
+                              maxWidth: "52px",
                               textAlign: "center",
                             }}
                           >
@@ -304,45 +442,64 @@ export async function GET(request: NextRequest) {
                     }}
                   />
 
+                  {/* Color reference blocks */}
                   <div
                     style={{
                       display: "flex",
                       flexWrap: "wrap",
-                      gap: "10px",
+                      gap: "12px",
                       flex: 1,
                     }}
                   >
-                    {colorBlocks.map((block) => (
-                      <MetricBlock
-                        key={block.label}
-                        label={block.label}
-                        value={block.value}
-                        border={subtleBorder}
-                        labelColor={faint}
-                        valueColor={ink}
-                      />
-                    ))}
+                    <MetricBlock
+                      label="Background"
+                      value={bg}
+                      border={subtleBorder}
+                      labelColor={faint}
+                      valueColor={ink}
+                    />
+                    <MetricBlock
+                      label="Text"
+                      value={fg}
+                      border={subtleBorder}
+                      labelColor={faint}
+                      valueColor={ink}
+                    />
+                    <MetricBlock
+                      label="Accent"
+                      value={accent}
+                      border={subtleBorder}
+                      labelColor={faint}
+                      valueColor={ink}
+                    />
+                    <MetricBlock
+                      label="Palette"
+                      value={`${palette.length} colors`}
+                      border={subtleBorder}
+                      labelColor={faint}
+                      valueColor={ink}
+                    />
                   </div>
                 </div>
               </div>
 
+              {/* Right column — specimen strip */}
               <div
                 style={{
-                  width: "34%",
+                  width: "36%",
                   display: "flex",
                   flexDirection: "column",
                   borderLeft: `1px solid ${frameBorder}`,
-                  paddingLeft: "26px",
-                  position: "relative",
+                  paddingLeft: "36px",
                 }}
               >
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "14px",
                     letterSpacing: "0.28em",
                     textTransform: "uppercase",
                     color: faint,
-                    marginBottom: "14px",
+                    marginBottom: "18px",
                   }}
                 >
                   Specimen Strip
@@ -352,7 +509,8 @@ export async function GET(request: NextRequest) {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "10px",
+                    gap: "14px",
+                    flex: 1,
                   }}
                 >
                   <SpecimenRow
@@ -389,13 +547,13 @@ export async function GET(request: NextRequest) {
                   />
                 </div>
 
+                {/* Footer */}
                 <div
                   style={{
-                    marginTop: "auto",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "10px",
-                    paddingTop: "18px",
+                    gap: "14px",
+                    paddingTop: "20px",
                   }}
                 >
                   <div
@@ -413,7 +571,7 @@ export async function GET(request: NextRequest) {
                   >
                     <div
                       style={{
-                        fontSize: "10px",
+                        fontSize: "13px",
                         letterSpacing: "0.24em",
                         textTransform: "uppercase",
                         color: faint,
@@ -423,8 +581,8 @@ export async function GET(request: NextRequest) {
                     </div>
                     <div
                       style={{
-                        width: "72px",
-                        height: "10px",
+                        width: "100px",
+                        height: "14px",
                         borderRadius: "999px",
                         background: `linear-gradient(90deg, ${accent} 0%, ${withAlpha(accent, 0.18)} 100%)`,
                       }}
@@ -438,8 +596,8 @@ export async function GET(request: NextRequest) {
       </div>
     ),
     {
-      width: 1200,
-      height: 630,
+      width: 1800,
+      height: 945,
     }
   );
 }
@@ -457,24 +615,22 @@ function MetricBlock({
   labelColor: string;
   valueColor: string;
 }) {
-  const truncated = value.length > 36 ? `${value.slice(0, 33)}...` : value;
-
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "6px",
-        padding: "10px 12px 12px 12px",
+        gap: "8px",
+        padding: "14px 18px 16px 18px",
         border: `1px solid ${border}`,
-        borderRadius: "14px",
+        borderRadius: "18px",
         background: "rgba(255,255,255,0.16)",
-        width: "calc(50% - 5px)",
+        width: "calc(50% - 6px)",
       }}
     >
       <div
         style={{
-          fontSize: "10px",
+          fontSize: "13px",
           letterSpacing: "0.22em",
           textTransform: "uppercase",
           color: labelColor,
@@ -484,14 +640,14 @@ function MetricBlock({
       </div>
       <div
         style={{
-          fontSize: "14px",
+          fontSize: "19px",
           lineHeight: 1.35,
           color: valueColor,
           fontWeight: 600,
           overflow: "hidden",
         }}
       >
-        {truncated}
+        {value}
       </div>
     </div>
   );
@@ -512,17 +668,17 @@ function SpecimenRow({
   textColor: string;
   muted: string;
 }) {
-  const truncated = body.length > 50 ? `${body.slice(0, 47)}...` : body;
+  const truncated = body.length > 52 ? `${body.slice(0, 49)}...` : body;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "6px",
-        padding: "10px 14px",
+        gap: "8px",
+        padding: "14px 20px",
         border: `1px solid ${border}`,
-        borderRadius: "14px",
+        borderRadius: "18px",
         background: "rgba(255,255,255,0.12)",
       }}
     >
@@ -530,20 +686,20 @@ function SpecimenRow({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "10px",
+          gap: "12px",
         }}
       >
         <div
           style={{
-            width: "8px",
-            height: "8px",
+            width: "10px",
+            height: "10px",
             borderRadius: "999px",
             background: accent,
           }}
         />
         <div
           style={{
-            fontSize: "10px",
+            fontSize: "14px",
             letterSpacing: "0.22em",
             textTransform: "uppercase",
             color: muted,
@@ -554,7 +710,7 @@ function SpecimenRow({
       </div>
       <div
         style={{
-          fontSize: "14px",
+          fontSize: "20px",
           lineHeight: 1.4,
           color: textColor,
         }}
@@ -571,7 +727,9 @@ function withAlpha(color: string, opacity: number): string {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
 }
 
-function parseColor(color: string): { r: number; g: number; b: number } | null {
+function parseColor(
+  color: string
+): { r: number; g: number; b: number } | null {
   const normalized = color.trim().toLowerCase();
 
   if (normalized.startsWith("#")) {
