@@ -12,22 +12,39 @@ export async function GET(request: NextRequest) {
   const tags = (params.get("tags") ?? "").split(",").filter(Boolean);
   const palette = (params.get("palette") ?? "").split(",").filter(Boolean);
   const paletteRoles = (params.get("paletteRoles") ?? "").split(",").filter(Boolean);
-  const fontDisplay = params.get("fontDisplay") ?? "System sans";
-  const fontBody = params.get("fontBody") ?? "System sans";
+  const fontDisplay = params.get("fontDisplay") ?? "Display";
+  const fontBody = params.get("fontBody") ?? "Body";
   const layout = params.get("layout") ?? "";
   const spacing = params.get("spacing") ?? "";
   const buttons = params.get("buttons") ?? "";
   const header = params.get("header") ?? "";
   const bg = params.get("bg") || "#ece7df";
   const fg = params.get("fg") || "#191713";
-  const accentColor = params.get("accentColor") || "#1f6b53";
-  const muted = `${fg}99`;
-  const accentSoft = `${accentColor}1a`;
+  const accent = params.get("accentColor") || "#1f6b53";
+
+  const paper = bg;
+  const ink = fg;
+  const frameBorder = withAlpha(ink, 0.12);
+  const subtleBorder = withAlpha(ink, 0.08);
+  const muted = withAlpha(ink, 0.62);
+  const faint = withAlpha(ink, 0.45);
+  const accentSoft = withAlpha(accent, 0.12);
+  const specimenTint = withAlpha(ink, 0.035);
+  const swatches = palette.slice(0, 5);
 
   const truncatedSummary =
-    summary.length > 180 ? `${summary.slice(0, 177)}...` : summary;
+    summary.length > 200 ? `${summary.slice(0, 197)}...` : summary;
   const truncatedTitle =
-    title.length > 60 ? `${title.slice(0, 57)}...` : title;
+    title.length > 74 ? `${title.slice(0, 71)}...` : title;
+  const primaryTags = tags.slice(0, 4);
+  const detailBlocks = [
+    { label: "Display", value: fontDisplay },
+    { label: "Body", value: fontBody },
+    { label: "Layout", value: layout },
+    { label: "Spacing", value: spacing },
+    ...(buttons ? [{ label: "Buttons", value: buttons }] : []),
+    ...(header ? [{ label: "Nav", value: header }] : []),
+  ].slice(0, 6);
 
   return new ImageResponse(
     (
@@ -36,215 +53,437 @@ export async function GET(request: NextRequest) {
           width: "1200px",
           height: "630px",
           display: "flex",
-          flexDirection: "column",
-          fontFamily: "system-ui, sans-serif",
-          background: bg,
-          padding: "0",
           position: "relative",
           overflow: "hidden",
+          background: `linear-gradient(135deg, ${paper} 0%, ${withAlpha(accent, 0.08)} 42%, ${paper} 100%)`,
+          color: ink,
+          fontFamily: "\"Avenir Next\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
         }}
       >
-        {/* Background gradient accents */}
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            width: "400px",
-            height: "400px",
-            background: "radial-gradient(circle, rgba(31,107,83,0.15), transparent 65%)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            right: 0,
-            width: "500px",
-            height: "500px",
-            background: "radial-gradient(circle, rgba(189,98,54,0.1), transparent 65%)",
+            inset: "0",
+            backgroundImage: `
+              linear-gradient(${withAlpha(ink, 0.04)} 1px, transparent 1px),
+              linear-gradient(90deg, ${withAlpha(ink, 0.04)} 1px, transparent 1px)
+            `,
+            backgroundSize: "44px 44px",
+            opacity: 0.22,
           }}
         />
 
-        {/* Main card */}
         <div
           style={{
+            position: "absolute",
+            top: "24px",
+            left: "24px",
+            right: "24px",
+            bottom: "24px",
             display: "flex",
-            flexDirection: "column",
-            margin: "28px",
-            borderRadius: "28px",
-            border: `1px solid ${fg}1f`,
-            background: "rgba(255,253,249,0.95)",
-            flex: 1,
-            padding: "36px 40px",
-            boxShadow: "0 24px 60px -28px rgba(36,31,24,0.25)",
+            borderRadius: "30px",
+            border: `1px solid ${frameBorder}`,
+            background: withAlpha(paper, 0.9),
             overflow: "hidden",
           }}
         >
-          {/* Header row */}
           <div
             style={{
+              width: "42px",
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginBottom: "24px",
+              flexDirection: "column",
+              borderRight: `1px solid ${frameBorder}`,
+              background: specimenTint,
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  letterSpacing: "0.28em",
-                  textTransform: "uppercase",
-                  color: accentColor,
-                }}
-              >
-                Web Goblin
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: muted,
-                  background: `${fg}0d`,
-                  borderRadius: "999px",
-                  padding: "4px 12px",
-                  display: "flex",
-                  alignSelf: "flex-start",
-                }}
-              >
-                {host}
-              </div>
-            </div>
+            {swatches.length > 0
+              ? swatches.map((hex, index) => (
+                  <div
+                    key={`${hex}-${index}`}
+                    style={{
+                      flex: 1,
+                      background: hex,
+                      borderBottom:
+                        index < swatches.length - 1
+                          ? `1px solid ${withAlpha("#000000", 0.08)}`
+                          : "none",
+                    }}
+                  />
+                ))
+              : null}
+          </div>
+
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              padding: "34px 36px 28px 36px",
+            }}
+          >
             <div
               style={{
-                fontSize: "11px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: muted,
-                border: `1px solid ${fg}1f`,
-                borderRadius: "999px",
-                padding: "6px 16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "28px",
               }}
             >
-              Design DNA Report
-            </div>
-          </div>
-
-          {/* Title */}
-          <div
-            style={{
-              fontSize: "32px",
-              fontWeight: 700,
-              color: fg,
-              letterSpacing: "-0.03em",
-              lineHeight: 1.1,
-              marginBottom: "12px",
-              maxWidth: "720px",
-            }}
-          >
-            {truncatedTitle}
-          </div>
-
-          {/* Summary */}
-          <div
-            style={{
-              fontSize: "14px",
-              color: muted,
-              lineHeight: 1.6,
-              maxWidth: "640px",
-              marginBottom: "20px",
-            }}
-          >
-            {truncatedSummary}
-          </div>
-
-          {/* Tags */}
-          <div style={{ display: "flex", gap: "8px", marginBottom: "24px", flexWrap: "wrap" }}>
-            {tags.slice(0, 5).map((tag) => (
-              <div
-                key={tag}
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  color: accentColor,
-                  background: accentSoft,
-                  borderRadius: "999px",
-                  padding: "5px 14px",
-                }}
-              >
-                {tag}
-              </div>
-            ))}
-          </div>
-
-          {/* Bottom section: palette + details */}
-          <div
-            style={{
-              display: "flex",
-              gap: "24px",
-              flex: 1,
-              alignItems: "flex-end",
-            }}
-          >
-            {/* Palette swatches */}
-            <div style={{ display: "flex", gap: "8px" }}>
-              {palette.slice(0, 5).map((hex, index) => (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div
-                  key={hex}
+                  style={{
+                    fontSize: "11px",
+                    letterSpacing: "0.32em",
+                    textTransform: "uppercase",
+                    color: accent,
+                    fontWeight: 700,
+                  }}
+                >
+                  Web Goblin
+                </div>
+                <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "10px",
                   }}
                 >
                   <div
                     style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: muted,
+                      border: `1px solid ${subtleBorder}`,
+                      borderRadius: "999px",
+                      padding: "6px 14px",
+                    }}
+                  >
+                    {host}
+                  </div>
+                  <div
+                    style={{
                       width: "56px",
-                      height: "56px",
-                      borderRadius: "14px",
-                      background: hex,
-                      border: "1px solid rgba(0,0,0,0.06)",
+                      height: "1px",
+                      background: frameBorder,
                     }}
                   />
                   <div
                     style={{
-                      fontSize: "9px",
-                      fontWeight: 500,
-                      letterSpacing: "0.14em",
+                      fontSize: "12px",
+                      letterSpacing: "0.18em",
                       textTransform: "uppercase",
-                      color: muted,
+                      color: faint,
                     }}
                   >
-                    {paletteRoles[index] ?? ""}
+                    Design DNA
                   </div>
                 </div>
-              ))}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.28em",
+                    textTransform: "uppercase",
+                    color: faint,
+                  }}
+                >
+                  Audit Sheet
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: ink,
+                    background: accentSoft,
+                    borderRadius: "999px",
+                    padding: "6px 12px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {primaryTags[0] ?? "visual system"}
+                </div>
+              </div>
             </div>
 
-            {/* Divider */}
             <div
               style={{
-                width: "1px",
-                height: "64px",
-                background: `${fg}1f`,
-                flexShrink: 0,
+                display: "flex",
+                gap: "32px",
+                flex: 1,
               }}
-            />
+            >
+              <div
+                style={{
+                  width: "66%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "Baskerville, Georgia, serif",
+                    fontSize: "48px",
+                    lineHeight: 1.02,
+                    letterSpacing: "-0.04em",
+                    color: ink,
+                    fontWeight: 700,
+                    marginBottom: "18px",
+                  }}
+                >
+                  {truncatedTitle}
+                </div>
 
-            {/* Details */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <DetailRow label="Display" value={fontDisplay} labelColor={muted} valueColor={fg} />
-              <DetailRow label="Body" value={fontBody} labelColor={muted} valueColor={fg} />
-              <DetailRow label="Layout" value={layout} labelColor={muted} valueColor={fg} />
-              <DetailRow label="Spacing" value={spacing} labelColor={muted} valueColor={fg} />
-              {buttons ? <DetailRow label="Buttons" value={buttons} labelColor={muted} valueColor={fg} /> : null}
-              {header ? <DetailRow label="Nav" value={header} labelColor={muted} valueColor={fg} /> : null}
+                <div
+                  style={{
+                    fontSize: "15px",
+                    lineHeight: 1.7,
+                    color: muted,
+                    maxWidth: "680px",
+                    marginBottom: "26px",
+                  }}
+                >
+                  {truncatedSummary}
+                </div>
+
+                {primaryTags.length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      flexWrap: "wrap",
+                      marginBottom: "26px",
+                    }}
+                  >
+                    {primaryTags.map((tag) => (
+                      <div
+                        key={tag}
+                        style={{
+                          fontSize: "11px",
+                          letterSpacing: "0.18em",
+                          textTransform: "uppercase",
+                          color: accent,
+                          border: `1px solid ${withAlpha(accent, 0.22)}`,
+                          background: accentSoft,
+                          borderRadius: "999px",
+                          padding: "6px 12px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {tag}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "18px",
+                    alignItems: "stretch",
+                    marginTop: "auto",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "220px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        letterSpacing: "0.24em",
+                        textTransform: "uppercase",
+                        color: faint,
+                      }}
+                    >
+                      Palette Index
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      {swatches.map((hex, index) => (
+                        <div
+                          key={`${hex}-${index}`}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "34px",
+                              height: "92px",
+                              borderRadius: "17px",
+                              background: hex,
+                              border: `1px solid ${withAlpha("#000000", 0.08)}`,
+                            }}
+                          />
+                          <div
+                            style={{
+                              fontSize: "8px",
+                              letterSpacing: "0.14em",
+                              textTransform: "uppercase",
+                              color: faint,
+                              maxWidth: "40px",
+                              textAlign: "center",
+                            }}
+                          >
+                            {(paletteRoles[index] ?? "").slice(0, 8)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      width: "1px",
+                      background: frameBorder,
+                    }}
+                  />
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gap: "12px",
+                      flex: 1,
+                    }}
+                  >
+                    {detailBlocks.map((detail) => (
+                      <MetricBlock
+                        key={`${detail.label}-${detail.value}`}
+                        label={detail.label}
+                        value={detail.value}
+                        border={subtleBorder}
+                        labelColor={faint}
+                        valueColor={ink}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  width: "34%",
+                  display: "flex",
+                  flexDirection: "column",
+                  borderLeft: `1px solid ${frameBorder}`,
+                  paddingLeft: "26px",
+                  position: "relative",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.28em",
+                    textTransform: "uppercase",
+                    color: faint,
+                    marginBottom: "14px",
+                  }}
+                >
+                  Specimen Strip
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "14px",
+                  }}
+                >
+                  <SpecimenRow
+                    title="Type pairing"
+                    body={`${fontDisplay} / ${fontBody}`}
+                    accent={accent}
+                    border={subtleBorder}
+                    textColor={ink}
+                    muted={muted}
+                  />
+                  <SpecimenRow
+                    title="Structure"
+                    body={layout || "No dominant structure detected"}
+                    accent={accent}
+                    border={subtleBorder}
+                    textColor={ink}
+                    muted={muted}
+                  />
+                  <SpecimenRow
+                    title="Controls"
+                    body={buttons || "No control treatment detected"}
+                    accent={accent}
+                    border={subtleBorder}
+                    textColor={ink}
+                    muted={muted}
+                  />
+                  <SpecimenRow
+                    title="Navigation"
+                    body={header || "No dominant nav treatment detected"}
+                    accent={accent}
+                    border={subtleBorder}
+                    textColor={ink}
+                    muted={muted}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    paddingTop: "18px",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "1px",
+                      background: frameBorder,
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        letterSpacing: "0.24em",
+                        textTransform: "uppercase",
+                        color: faint,
+                      }}
+                    >
+                      Captured by Web Goblin
+                    </div>
+                    <div
+                      style={{
+                        width: "72px",
+                        height: "10px",
+                        borderRadius: "999px",
+                        background: `linear-gradient(90deg, ${accent} 0%, ${withAlpha(accent, 0.18)} 100%)`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -257,33 +496,171 @@ export async function GET(request: NextRequest) {
   );
 }
 
-function DetailRow({
+function MetricBlock({
   label,
   value,
-  labelColor = "#6b665f",
-  valueColor = "#191713",
+  border,
+  labelColor,
+  valueColor,
 }: {
   label: string;
   value: string;
-  labelColor?: string;
-  valueColor?: string;
+  border: string;
+  labelColor: string;
+  valueColor: string;
 }) {
-  const truncated = value.length > 40 ? `${value.slice(0, 37)}...` : value;
+  const truncated = value.length > 48 ? `${value.slice(0, 45)}...` : value;
+
   return (
-    <div style={{ display: "flex", gap: "8px", fontSize: "12px", lineHeight: 1.5 }}>
-      <span
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        padding: "14px 14px 16px 14px",
+        border: `1px solid ${border}`,
+        borderRadius: "18px",
+        background: "rgba(255,255,255,0.16)",
+      }}
+    >
+      <div
         style={{
-          color: labelColor,
+          fontSize: "10px",
+          letterSpacing: "0.22em",
           textTransform: "uppercase",
-          letterSpacing: "0.16em",
-          fontWeight: 500,
-          width: "64px",
-          flexShrink: 0,
+          color: labelColor,
         }}
       >
         {label}
-      </span>
-      <span style={{ color: valueColor }}>{truncated}</span>
+      </div>
+      <div
+        style={{
+          fontSize: "16px",
+          lineHeight: 1.35,
+          color: valueColor,
+          fontWeight: 600,
+        }}
+      >
+        {truncated}
+      </div>
     </div>
   );
+}
+
+function SpecimenRow({
+  title,
+  body,
+  accent,
+  border,
+  textColor,
+  muted,
+}: {
+  title: string;
+  body: string;
+  accent: string;
+  border: string;
+  textColor: string;
+  muted: string;
+}) {
+  const truncated = body.length > 72 ? `${body.slice(0, 69)}...` : body;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        padding: "14px 16px",
+        border: `1px solid ${border}`,
+        borderRadius: "18px",
+        background: "rgba(255,255,255,0.12)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
+      >
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "999px",
+            background: accent,
+          }}
+        />
+        <div
+          style={{
+            fontSize: "10px",
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: muted,
+          }}
+        >
+          {title}
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: "16px",
+          lineHeight: 1.45,
+          color: textColor,
+        }}
+      >
+        {truncated}
+      </div>
+    </div>
+  );
+}
+
+function withAlpha(color: string, opacity: number): string {
+  const rgb = parseColor(color);
+  if (!rgb) return color;
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+}
+
+function parseColor(color: string): { r: number; g: number; b: number } | null {
+  const normalized = color.trim().toLowerCase();
+
+  if (normalized.startsWith("#")) {
+    const hex = normalized.slice(1);
+    if (hex.length === 3 || hex.length === 4) {
+      const expanded = hex
+        .slice(0, 3)
+        .split("")
+        .map((part) => `${part}${part}`)
+        .join("");
+      return {
+        r: Number.parseInt(expanded.slice(0, 2), 16),
+        g: Number.parseInt(expanded.slice(2, 4), 16),
+        b: Number.parseInt(expanded.slice(4, 6), 16),
+      };
+    }
+    if (hex.length === 6 || hex.length === 8) {
+      return {
+        r: Number.parseInt(hex.slice(0, 2), 16),
+        g: Number.parseInt(hex.slice(2, 4), 16),
+        b: Number.parseInt(hex.slice(4, 6), 16),
+      };
+    }
+  }
+
+  const rgbMatch = normalized.match(/rgba?\(([^)]+)\)/);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(",").map((part) => part.trim());
+    if (parts.length >= 3) {
+      return {
+        r: Number(parts[0]),
+        g: Number(parts[1]),
+        b: Number(parts[2]),
+      };
+    }
+  }
+
+  if (normalized === "white") return { r: 255, g: 255, b: 255 };
+  if (normalized === "black") return { r: 0, g: 0, b: 0 };
+
+  return null;
 }
