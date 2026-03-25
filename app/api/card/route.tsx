@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
   const swatches = palette.slice(0, 5);
 
   const truncatedSummary =
-    summary.length > 200 ? `${summary.slice(0, 197)}...` : summary;
+    summary.length > 120 ? `${summary.slice(0, 117)}...` : summary;
   const truncatedTitle =
-    title.length > 74 ? `${title.slice(0, 71)}...` : title;
+    title.length > 52 ? `${title.slice(0, 49)}...` : title;
   const primaryTags = tags.slice(0, 4);
   const detailBlocks = [
     { label: "Display", value: fontDisplay },
@@ -118,7 +118,8 @@ export async function GET(request: NextRequest) {
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              padding: "34px 36px 28px 36px",
+              padding: "28px 32px 22px 32px",
+              overflow: "hidden",
             }}
           >
             <div
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                marginBottom: "28px",
+                marginBottom: "16px",
               }}
             >
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -233,12 +234,14 @@ export async function GET(request: NextRequest) {
                 <div
                   style={{
                     fontFamily: "Baskerville, Georgia, serif",
-                    fontSize: "48px",
-                    lineHeight: 1.02,
-                    letterSpacing: "-0.04em",
+                    fontSize: "34px",
+                    lineHeight: 1.1,
+                    letterSpacing: "-0.03em",
                     color: ink,
                     fontWeight: 700,
-                    marginBottom: "18px",
+                    marginBottom: "10px",
+                    maxHeight: "78px",
+                    overflow: "hidden",
                   }}
                 >
                   {truncatedTitle}
@@ -246,11 +249,13 @@ export async function GET(request: NextRequest) {
 
                 <div
                   style={{
-                    fontSize: "15px",
-                    lineHeight: 1.7,
+                    fontSize: "14px",
+                    lineHeight: 1.6,
                     color: muted,
                     maxWidth: "680px",
-                    marginBottom: "26px",
+                    marginBottom: "16px",
+                    maxHeight: "46px",
+                    overflow: "hidden",
                   }}
                 >
                   {truncatedSummary}
@@ -260,9 +265,9 @@ export async function GET(request: NextRequest) {
                   <div
                     style={{
                       display: "flex",
-                      gap: "10px",
+                      gap: "8px",
                       flexWrap: "wrap",
-                      marginBottom: "26px",
+                      marginBottom: "14px",
                     }}
                   >
                     {primaryTags.map((tag) => (
@@ -289,7 +294,7 @@ export async function GET(request: NextRequest) {
                 <div
                   style={{
                     display: "flex",
-                    gap: "18px",
+                    gap: "14px",
                     alignItems: "stretch",
                     marginTop: "auto",
                   }}
@@ -325,9 +330,9 @@ export async function GET(request: NextRequest) {
                         >
                           <div
                             style={{
-                              width: "34px",
-                              height: "92px",
-                              borderRadius: "17px",
+                              width: "32px",
+                              height: "64px",
+                              borderRadius: "16px",
                               background: hex,
                               border: `1px solid ${withAlpha("#000000", 0.08)}`,
                             }}
@@ -360,7 +365,7 @@ export async function GET(request: NextRequest) {
                     style={{
                       display: "flex",
                       flexWrap: "wrap",
-                      gap: "12px",
+                      gap: "10px",
                       flex: 1,
                     }}
                   >
@@ -404,7 +409,7 @@ export async function GET(request: NextRequest) {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "14px",
+                    gap: "10px",
                   }}
                 >
                   <SpecimenRow
@@ -509,19 +514,19 @@ function MetricBlock({
   labelColor: string;
   valueColor: string;
 }) {
-  const truncated = value.length > 48 ? `${value.slice(0, 45)}...` : value;
+  const truncated = value.length > 36 ? `${value.slice(0, 33)}...` : value;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "8px",
-        padding: "14px 14px 16px 14px",
+        gap: "6px",
+        padding: "10px 12px 12px 12px",
         border: `1px solid ${border}`,
-        borderRadius: "18px",
+        borderRadius: "14px",
         background: "rgba(255,255,255,0.16)",
-        width: "calc(50% - 6px)",
+        width: "calc(50% - 5px)",
       }}
     >
       <div
@@ -536,10 +541,11 @@ function MetricBlock({
       </div>
       <div
         style={{
-          fontSize: "16px",
+          fontSize: "14px",
           lineHeight: 1.35,
           color: valueColor,
           fontWeight: 600,
+          overflow: "hidden",
         }}
       >
         {truncated}
@@ -563,17 +569,17 @@ function SpecimenRow({
   textColor: string;
   muted: string;
 }) {
-  const truncated = body.length > 72 ? `${body.slice(0, 69)}...` : body;
+  const truncated = body.length > 50 ? `${body.slice(0, 47)}...` : body;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "8px",
-        padding: "14px 16px",
+        gap: "6px",
+        padding: "10px 14px",
         border: `1px solid ${border}`,
-        borderRadius: "18px",
+        borderRadius: "14px",
         background: "rgba(255,255,255,0.12)",
       }}
     >
@@ -605,8 +611,8 @@ function SpecimenRow({
       </div>
       <div
         style={{
-          fontSize: "16px",
-          lineHeight: 1.45,
+          fontSize: "14px",
+          lineHeight: 1.4,
           color: textColor,
         }}
       >

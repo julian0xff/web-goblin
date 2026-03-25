@@ -5,12 +5,13 @@ import { useCallback, useState } from "react";
 import {
   ArrowSquareOutIcon as ArrowSquareOut,
   CopyIcon as Copy,
+  DownloadSimpleIcon as DownloadSimple,
   GlobeIcon as Globe,
   MagicWandIcon as MagicWand,
   PaletteIcon as Palette,
-  ShareNetworkIcon as ShareNetwork,
   SparkleIcon as Sparkle,
   TextTIcon as TextT,
+  XIcon as X,
   XLogoIcon as XLogo,
 } from "@phosphor-icons/react";
 import type { ComponentStyle, StyleRole } from "@/lib/analysis-types";
@@ -165,6 +166,7 @@ function ResultHeader({
 }) {
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
+  const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
 
   const generateCardAndShare = useCallback(async () => {
     setCardError(null);
@@ -209,39 +211,47 @@ function ResultHeader({
     }
   }, [analysis]);
 
+  const buildCardUrl = useCallback(() => {
+    const bgColor =
+      analysis.palette.find((s) => s.role === "background")?.hex ?? "";
+    const fgColor =
+      analysis.palette.find((s) => s.role === "foreground")?.hex ??
+      analysis.palette.find((s) => s.role === "text")?.hex ??
+      "";
+    const accentColor =
+      analysis.palette.find((s) => s.role === "accent")?.hex ??
+      analysis.palette.find((s) => s.role === "primary")?.hex ??
+      "";
+    const params = new URLSearchParams({
+      host: analysis.host,
+      title: analysis.title,
+      summary: analysis.summary,
+      tags: analysis.tags.join(","),
+      palette: analysis.palette.map((s) => s.hex).join(","),
+      paletteRoles: analysis.palette.map((s) => s.role).join(","),
+      fontDisplay: analysis.fonts.display,
+      fontBody: analysis.fonts.body,
+      layout: analysis.layout.structure,
+      spacing: analysis.layout.spacing,
+      buttons: analysis.buttons.label,
+      header: analysis.header.label,
+      ...(bgColor && { bg: bgColor }),
+      ...(fgColor && { fg: fgColor }),
+      ...(accentColor && { accentColor }),
+    });
+    return `/api/card?${params.toString()}`;
+  }, [analysis]);
+
+  const previewCard = useCallback(() => {
+    setCardError(null);
+    setCardPreviewUrl(buildCardUrl());
+  }, [buildCardUrl]);
+
   const downloadCard = useCallback(async () => {
     setCardError(null);
     setIsGeneratingCard(true);
     try {
-      const bgColor =
-        analysis.palette.find((s) => s.role === "background")?.hex ?? "";
-      const fgColor =
-        analysis.palette.find((s) => s.role === "foreground")?.hex ??
-        analysis.palette.find((s) => s.role === "text")?.hex ??
-        "";
-      const accentColor =
-        analysis.palette.find((s) => s.role === "accent")?.hex ??
-        analysis.palette.find((s) => s.role === "primary")?.hex ??
-        "";
-      const params = new URLSearchParams({
-        host: analysis.host,
-        title: analysis.title,
-        summary: analysis.summary,
-        tags: analysis.tags.join(","),
-        palette: analysis.palette.map((s) => s.hex).join(","),
-        paletteRoles: analysis.palette.map((s) => s.role).join(","),
-        fontDisplay: analysis.fonts.display,
-        fontBody: analysis.fonts.body,
-        layout: analysis.layout.structure,
-        spacing: analysis.layout.spacing,
-        buttons: analysis.buttons.label,
-        header: analysis.header.label,
-        ...(bgColor && { bg: bgColor }),
-        ...(fgColor && { fg: fgColor }),
-        ...(accentColor && { accentColor }),
-      });
-
-      const response = await fetch(`/api/card?${params.toString()}`);
+      const response = await fetch(buildCardUrl());
       if (!response.ok) {
         const body = await response.text().catch(() => "");
         throw new Error(body || `Card generation failed (${response.status})`);
@@ -265,7 +275,7 @@ function ResultHeader({
     } finally {
       setIsGeneratingCard(false);
     }
-  }, [analysis]);
+  }, [analysis, buildCardUrl]);
 
   return (
     <section className="rounded-2xl border border-[var(--line)] bg-[color:var(--panel-strong)] p-5 md:p-6">
@@ -313,11 +323,10 @@ function ResultHeader({
           Share on X
         </ActionButton>
         <ActionButton
-          icon={<ShareNetwork size={16} weight="bold" />}
-          onClick={() => void downloadCard()}
-          disabled={isGeneratingCard}
+          icon={<DownloadSimple size={16} weight="bold" />}
+          onClick={previewCard}
         >
-          Download card
+          Preview card
         </ActionButton>
         <a
           href={analysis.normalizedUrl}
@@ -331,6 +340,43 @@ function ResultHeader({
       </div>
       {cardError ? (
         <p className="mt-3 text-sm text-[var(--accent)]">{cardError}</p>
+      ) : null}
+
+      {cardPreviewUrl ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setCardPreviewUrl(null)}
+        >
+          <div
+            className="relative mx-4 flex max-w-3xl flex-col items-center gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={cardPreviewUrl}
+              alt={`Design card for ${analysis.host}`}
+              className="w-full rounded-2xl shadow-2xl"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void downloadCard()}
+                disabled={isGeneratingCard}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--ink)] px-4 text-sm font-medium text-[var(--paper)] transition-all duration-300 hover:bg-[var(--accent)] disabled:cursor-wait disabled:opacity-50"
+              >
+                <DownloadSimple size={16} weight="bold" />
+                {isGeneratingCard ? "Saving..." : "Save PNG"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCardPreviewUrl(null)}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/20 px-4 text-sm font-medium text-white transition-all duration-300 hover:bg-white/10"
+              >
+                <X size={16} weight="bold" />
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </section>
   );
